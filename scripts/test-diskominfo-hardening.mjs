@@ -25,6 +25,11 @@ const sensitiveTables = [
   "warga",
   "v_warga_desil_current",
   "v_warga_desil_current_resolved",
+  "dinsos_cases",
+  "dinsos_asesmen_sosial",
+  "dinsos_case_results",
+  "referral_mbi",
+  "user_capabilities",
 ];
 const adminRpcs = [
   "list_managed_users",
@@ -32,6 +37,8 @@ const adminRpcs = [
   "activity_log_filter_options",
   "list_integrations",
   "integration_summary",
+  "dinsos_queue_summary",
+  "list_dinsos_cases",
 ];
 
 async function assertDenied(response, label) {
@@ -202,6 +209,11 @@ const mutationRoutes = [
   "app/api/admin/integrations/route.ts",
   "app/api/admin/integrations/[id]/route.ts",
   "app/api/admin/integrations/[id]/test/route.ts",
+  "app/api/dinsos/cases/[caseId]/assessment/draft/route.ts",
+  "app/api/dinsos/cases/[caseId]/assessment/complete/route.ts",
+  "app/api/dinsos/cases/[caseId]/result/override/route.ts",
+  "app/api/dinsos/cases/[caseId]/result/confirm/route.ts",
+  "app/api/dinsos/cases/[caseId]/stabilization/send/route.ts",
 ];
 for (const route of mutationRoutes) {
   const source = await readFile(path.join(PROJECT_ROOT, route), "utf8");

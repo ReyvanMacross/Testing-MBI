@@ -54,7 +54,12 @@ export default function LoginForm({ initialError = false }: LoginFormProps) {
         return;
       }
 
-      router.replace("/diskominfo");
+      const data = (await response.json()) as { redirectTo?: string };
+      if (!data.redirectTo?.startsWith("/")) {
+        setLoginError(true);
+        return;
+      }
+      router.replace(data.redirectTo);
       router.refresh();
     } catch {
       setLoginError(true);

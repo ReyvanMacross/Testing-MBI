@@ -1,0 +1,10 @@
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { CaseHero } from "@/components/dinsos/case-hero";
+import { CaseTabs } from "@/components/dinsos/case-tabs";
+import { ReferralAction } from "@/components/dinsos/referral-action";
+import referralStyles from "@/components/dinsos/referral.module.css";
+import styles from "@/components/dinsos/case.module.css";
+import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
+import { getDinsosCaseById } from "@/lib/dinsos/cases";
+export default async function ReferralPage({params}:{params:Promise<{caseId:string}>}){const {caseId}=await params;const actor=await requireDinsosActor();const item=await getDinsosCaseById(caseId,actor.profileId);if(!item)notFound();if(item.result?.status!=="CONFIRMED")redirect(`/dinsos/kasus/${caseId}/hasil`);const referral=item.referral;const isStabilization=item.result.disposition==="STABILISASI_SOSIAL";return <section><div className={styles.breadcrumb}><span>Antrian Kerja Harian &nbsp;/&nbsp; Data Warga &nbsp;/&nbsp; Asesmen Sosial &nbsp;/&nbsp; Hasil Desil &nbsp;/&nbsp; <strong>Split Jalur &amp; Referral</strong></span><Link className={styles.back} href="/dinsos">← Kembali ke Antrian</Link></div><CaseHero item={item} compact/><CaseTabs caseId={caseId} active="referral" assessmentReady resultReady/><article className={referralStyles.panel}><div><span className={referralStyles.icon}>♢</span>{referral?<><h2>Referral Proteksi &amp; Stabilisasi Telah Dikirim</h2><p className={referralStyles.sent}>Status: {String(referral.status)} • {new Intl.DateTimeFormat("id-ID",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Jakarta"}).format(new Date(String(referral.sent_at)))}</p></>:isStabilization?<><h2>Perlu Stabilisasi Terlebih Dahulu</h2><p>Berdasarkan hasil asesmen, warga ini perlu melalui tahap Proteksi dan Stabilisasi sebelum dapat masuk ke Inkubasi Sosial dan menerima referral jalur intervensi.</p><ReferralAction caseId={caseId}/></>:<><h2>Menunggu Split Jalur</h2><p>Hasil Desil telah dikonfirmasi. Proses Split Jalur akan dilanjutkan setelah desain dan kebijakan readiness disetujui.</p></>}</div></article></section>}

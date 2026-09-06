@@ -69,6 +69,10 @@ const [
   totalWilayah,
   integrations,
   auditMetadata,
+  dinsosFixtures,
+  dinsosAdmin,
+  waitingStabilization,
+  waitingSplit,
 ] = await Promise.all([
   count(
     admin
@@ -119,6 +123,10 @@ const [
     .from("integrasi_api")
     .select("id, endpoint_url, credential_type, credential_ref"),
   admin.from("log_aktivitas").select("id, metadata"),
+  count(admin.from("dinsos_cases").select("id", { count: "exact", head: true }).eq("is_fixture", true)),
+  admin.from("user_profiles").select("id,auth_user_id,status,role,master_opd(kode_opd)").eq("email", "dinsos@bandung.go.id").maybeSingle(),
+  count(admin.from("dinsos_cases").select("id", { count: "exact", head: true }).eq("current_stage", "MENUNGGU_STABILISASI")),
+  count(admin.from("dinsos_cases").select("id", { count: "exact", head: true }).eq("current_stage", "MENUNGGU_SPLIT_JALUR")),
 ]);
 
 if (integrations.error) throw integrations.error;
@@ -134,6 +142,11 @@ if (activeTestAccounts > 0) {
 }
 if (developmentIntegrations > 0) {
   blockers.push(`Fixture integrasi development: ${developmentIntegrations}`);
+}
+if (dinsosFixtures > 0) blockers.push(`Fixture kasus Dinsos: ${dinsosFixtures}`);
+const dinsosOpd = Array.isArray(dinsosAdmin.data?.master_opd) ? dinsosAdmin.data.master_opd[0] : dinsosAdmin.data?.master_opd;
+if (!dinsosAdmin.data?.auth_user_id || dinsosAdmin.data.status !== "AKTIF" || dinsosAdmin.data.role !== "INTERVENSI" || dinsosOpd?.kode_opd !== "DINSOS") {
+  blockers.push("Admin Dinsos belum di-onboard secara valid");
 }
 
 const invalidEndpointHosts = [];
@@ -172,6 +185,9 @@ if (sensitiveMetadata.length > 0) {
 }
 
 if (!process.env.APP_ORIGIN) blockers.push("APP_ORIGIN belum dikonfigurasi");
+if (process.env.DINSOS_ASSESSMENT_OPTIONS_SOURCE?.toLowerCase() === "dev") {
+  blockers.push("Opsi asesmen development Dinsos masih aktif");
+}
 
 if (unresolvedWarga > 0) warnings.push(`Warga belum resolved: ${unresolvedWarga}`);
 if (legacyUsers > 0) warnings.push(`Akun legacy tanpa username/NIP: ${legacyUsers}`);
@@ -183,6 +199,10 @@ if ((integrations.data ?? []).every((item) => !item.endpoint_url)) {
 if (process.env.APP_ORIGIN?.includes("localhost")) {
   warnings.push("APP_ORIGIN masih menunjuk localhost; ganti saat deployment");
 }
+if (waitingStabilization > 0) warnings.push(`Kasus menunggu stabilisasi: ${waitingStabilization}`);
+if (waitingSplit > 0) warnings.push(`Kasus menunggu Split Jalur: ${waitingSplit}`);
+warnings.push("Kebijakan numeric scoring Dinsos belum disetujui");
+warnings.push("Rentang pendapatan asesmen menunggu persetujuan stakeholder Dinsos");
 
 info.push(`Total pengguna: ${totalUsers}`);
 info.push(`Total integrasi: ${totalIntegrations}`);
