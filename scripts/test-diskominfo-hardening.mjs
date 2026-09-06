@@ -40,6 +40,7 @@ const adminRpcs = [
   "dinsos_queue_summary",
   "list_dinsos_cases",
 ];
+const migrationAdminRpcs = ["dinsos_warga_summary", "list_dinsos_warga"];
 
 async function assertDenied(response, label) {
   const body = await response.text();
@@ -66,6 +67,14 @@ for (const rpc of adminRpcs) {
     }),
     `anon RPC ${rpc}`,
   );
+}
+for (const rpc of migrationAdminRpcs) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
+    method: "POST",
+    headers: { apikey: publishableKey, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (response.status !== 404) await assertDenied(response, `anon RPC ${rpc}`);
 }
 
 const browser = createClient(supabaseUrl, publishableKey, {
@@ -99,6 +108,14 @@ for (const rpc of adminRpcs) {
     }),
     `authenticated RPC ${rpc}`,
   );
+}
+for (const rpc of migrationAdminRpcs) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
+    method: "POST",
+    headers: { ...authenticatedHeaders, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (response.status !== 404) await assertDenied(response, `authenticated RPC ${rpc}`);
 }
 await browser.auth.signOut({ scope: "local" });
 
@@ -195,6 +212,19 @@ const activityWriterSource = await readFile(
   path.join(PROJECT_ROOT, "lib", "audit", "write-activity-log.ts"),
   "utf8",
 );
+const wargaRegistryMigration = await readFile(
+  path.join(
+    PROJECT_ROOT,
+    "supabase",
+    "migrations",
+    "202609060009_dinsos_warga_registry.sql",
+  ),
+  "utf8",
+);
+for (const rpc of migrationAdminRpcs) {
+  assert.match(wargaRegistryMigration, new RegExp(`revoke all on function public\\.${rpc}`));
+  assert.match(wargaRegistryMigration, new RegExp(`grant execute on function public\\.${rpc}`));
+}
 assert.match(
   activityWriterSource,
   /metadata:\s*redactAuditMetadata\(input\.metadata \?\? \{\}\)/,
@@ -214,6 +244,7 @@ const mutationRoutes = [
   "app/api/dinsos/cases/[caseId]/result/override/route.ts",
   "app/api/dinsos/cases/[caseId]/result/confirm/route.ts",
   "app/api/dinsos/cases/[caseId]/stabilization/send/route.ts",
+  "app/api/dinsos/warga/[wargaId]/route.ts",
 ];
 for (const route of mutationRoutes) {
   const source = await readFile(path.join(PROJECT_ROOT, route), "utf8");

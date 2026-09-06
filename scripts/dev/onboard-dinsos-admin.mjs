@@ -56,11 +56,18 @@ const { error: updateError } = await admin.from("user_profiles").update({
 }).eq("id", profile.id);
 if (updateError) throw updateError;
 
-const { error: capabilityError } = await admin.from("user_capabilities").upsert({
-  user_id: profile.id,
-  capability: "DINSOS_DESIL_OVERRIDE",
-  granted_by: profile.id,
-}, { onConflict: "user_id,capability" });
+const { error: capabilityError } = await admin.from("user_capabilities").upsert([
+  {
+    user_id: profile.id,
+    capability: "DINSOS_DESIL_OVERRIDE",
+    granted_by: profile.id,
+  },
+  {
+    user_id: profile.id,
+    capability: "DINSOS_WARGA_EDIT",
+    granted_by: profile.id,
+  },
+], { onConflict: "user_id,capability" });
 if (capabilityError) throw capabilityError;
 
-console.log("Admin Dinsos berhasil di-onboard dan capability override sudah diberikan.");
+console.log("Admin Dinsos berhasil di-onboard dan capability Dinsos sudah diberikan.");

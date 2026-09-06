@@ -25,4 +25,61 @@ test.describe.serial("Dinas Sosial workflow",()=>{
     const diskPage=await browser.newPage();const adminPassword=process.env.E2E_ADMIN_PASSWORD??process.env.SUPABASE_TEST_PASSWORD;if(!adminPassword)throw new Error("Credential Diskominfo hilang.");await login(diskPage,process.env.E2E_ADMIN_IDENTIFIER??"admin.mbi",adminPassword);const diskApiStatus=await diskPage.evaluate(async(caseId)=>{const response=await fetch(`/api/dinsos/cases/${caseId}/assessment/draft`,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});return response.status;},fixture.workflow);expect(diskApiStatus).toBe(403);await diskPage.goto("/dinsos");await expect(diskPage).toHaveURL(/\/diskominfo$/);await diskPage.close();
     const dinsosPage=await browser.newPage();const dinsosPassword=process.env.E2E_DINSOS_PASSWORD??process.env.DINSOS_ADMIN_PASSWORD;if(!dinsosPassword)throw new Error("Credential Dinsos hilang.");await login(dinsosPage,process.env.E2E_DINSOS_IDENTIFIER??"admin.dinsos",dinsosPassword);const dinsosApiStatus=await dinsosPage.evaluate(async()=>{const response=await fetch("/api/admin/integrations",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});return response.status;});expect(dinsosApiStatus).toBe(403);await dinsosPage.goto("/diskominfo");await expect(dinsosPage).toHaveURL(/\/dinsos$/);await dinsosPage.close();
   });
+
+  test("Admin Dinsos can inspect the citizen registry without exposing identifiers",async({page})=>{
+    const identifier=process.env.E2E_DINSOS_IDENTIFIER??process.env.DINSOS_ADMIN_USERNAME;
+    const password=process.env.E2E_DINSOS_PASSWORD??process.env.DINSOS_ADMIN_PASSWORD;
+    if(!identifier||!password)throw new Error("Credential E2E Dinsos belum tersedia.");
+    await login(page,identifier,password);
+    await page.goto("/dinsos/warga");
+    await expect(page.getByRole("heading",{name:"Data Warga"})).toBeVisible();
+    await expect(page.getByText("Total Warga Terdaftar")).toBeVisible();
+    const firstRow=page.getByRole("table").locator("tbody tr").first();
+    const citizenName=(await firstRow.locator("td").nth(1).innerText()).trim();
+    await page.getByLabel("Cari Warga").fill(citizenName);
+    await page.getByRole("button",{name:/Filter/}).click();
+    await expect(page.getByRole("table").getByText(citizenName,{exact:true}).first()).toBeVisible();
+    await page.screenshot({path:path.join(artifactDir,"06-data-warga-registry-desktop.png"),fullPage:true});
+    await Promise.all([
+      page.waitForURL(/warga=/),
+      page.getByRole("link",{name:/Detail/}).first().click(),
+    ]);
+    const drawer=page.getByRole("dialog",{name:new RegExp(`Profil Warga.*${citizenName}`)});
+    await expect(drawer).toBeVisible();
+    const drawerText=await drawer.innerText();
+    expect(drawerText).toMatch(/x{4,}/);
+    expect(drawerText).not.toMatch(/\b\d{16}\b/);
+    await page.screenshot({path:path.join(artifactDir,"07-data-warga-profile-desktop.png"),fullPage:true});
+    await Promise.all([
+      page.waitForURL(/mode=edit/),
+      drawer.getByRole("link",{name:"Edit Data"}).click(),
+    ]);
+    const dialog=page.getByRole("dialog",{name:"Edit Data Warga"});
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByLabel("Nomor Induk Kependudukan (NIK)")).toHaveAttribute("readonly","");
+    await page.screenshot({path:path.join(artifactDir,"08-edit-warga-desktop.png"),fullPage:true});
+    await dialog.getByRole("button",{name:"Tutup Edit Data Warga"}).click();
+    await expect(drawer).toBeVisible();
+    await drawer.getByRole("link",{name:"Tutup profil warga"}).click();
+    await page.setViewportSize({width:390,height:844});
+    await page.goto("/dinsos/warga");
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:path.join(artifactDir,"09-data-warga-registry-mobile.png"),fullPage:true});
+    await Promise.all([
+      page.waitForURL(/warga=/),
+      page.getByRole("link",{name:"Detail",exact:true}).first().click(),
+    ]);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:path.join(artifactDir,"10-data-warga-profile-mobile.png")});
+    await Promise.all([
+      page.waitForURL(/mode=edit/),
+      page.getByRole("link",{name:"Edit Data"}).click(),
+    ]);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:path.join(artifactDir,"11-edit-warga-mobile.png")});
+    await page.getByRole("button",{name:"Tutup Edit Data Warga"}).click();
+    await page.getByRole("link",{name:"Tutup profil warga"}).click();
+    await page.getByRole("button",{name:"Keluar"}).click();
+    await expect(page).toHaveURL(/\/login$/);
+  });
 });
