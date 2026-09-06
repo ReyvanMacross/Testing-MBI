@@ -76,6 +76,9 @@ const [
   assessmentFixtures,
   assessmentsNeedsReview,
   assessmentsNeedReassessment,
+  pathDecisions,
+  pathReferrals,
+  approvedAssessments,
 ] = await Promise.all([
   count(
     admin
@@ -133,10 +136,16 @@ const [
   count(admin.from("dinsos_assessments").select("id", { count: "exact", head: true }).eq("is_fixture", true)),
   count(admin.from("dinsos_assessments").select("id", { count: "exact", head: true }).eq("status", "PERLU_REVIEW")),
   count(admin.from("dinsos_assessments").select("id", { count: "exact", head: true }).eq("status", "MINTA_REASESMEN")),
+  admin.from("penentuan_jalur").select("id,assessment_id,case_id,decision_status,decision_source,approved_path_snapshot,output_jalur,target_opd_id"),
+  admin.from("referral_mbi").select("id,assessment_id,path_decision_id,jalur,status,sent_at"),
+  admin.from("dinsos_assessments").select("id").eq("status", "DISETUJUI"),
 ]);
 
 if (integrations.error) throw integrations.error;
 if (auditMetadata.error) throw auditMetadata.error;
+if (pathDecisions.error) throw pathDecisions.error;
+if (pathReferrals.error) throw pathReferrals.error;
+if (approvedAssessments.error) throw approvedAssessments.error;
 
 const blockers = [];
 const warnings = [];
@@ -148,6 +157,9 @@ for (const table of [
   "dinsos_assessment_types",
   "dinsos_assessments",
   "dinsos_assessment_reviews",
+  "penentuan_jalur",
+  "referral_mbi",
+  "dinsos_path_overrides",
 ]) {
   const response = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*&limit=1`, {
     headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "" },
@@ -155,7 +167,7 @@ for (const table of [
   if (![401, 403].includes(response.status)) assessmentBrowserReadable.push(table);
 }
 if (assessmentBrowserReadable.length > 0) {
-  blockers.push(`Tabel review asesmen dapat dibaca browser: ${assessmentBrowserReadable.join(", ")}`);
+  blockers.push(`Tabel domain Dinsos dapat dibaca browser: ${assessmentBrowserReadable.join(", ")}`);
 }
 
 if (activeTestAccounts > 0) {
@@ -164,8 +176,65 @@ if (activeTestAccounts > 0) {
 if (developmentIntegrations > 0) {
   blockers.push(`Fixture integrasi development: ${developmentIntegrations}`);
 }
-if (dinsosFixtures > 0) blockers.push(`Fixture kasus Dinsos: ${dinsosFixtures}`);
+if (dinsosFixtures > 0) blockers.push(`Fixture kasus/path Dinsos: ${dinsosFixtures}`);
 if (assessmentFixtures > 0) blockers.push(`Fixture asesmen Dinsos: ${assessmentFixtures}`);
+
+const nonLegacyDecisions = (pathDecisions.data ?? []).filter(
+  (item) => item.decision_source !== "LEGACY",
+);
+const orphanPathDecisions = nonLegacyDecisions.filter(
+  (item) => !item.assessment_id || !item.case_id,
+);
+if (orphanPathDecisions.length > 0) {
+  blockers.push(`Keputusan jalur orphan: ${orphanPathDecisions.length}`);
+}
+const finalWithoutTarget = nonLegacyDecisions.filter(
+  (item) => item.decision_status === "FINAL" && !item.target_opd_id,
+);
+if (finalWithoutTarget.length > 0) {
+  blockers.push(`Keputusan jalur FINAL tanpa OPD tujuan: ${finalWithoutTarget.length}`);
+}
+const finalDecisionsById = new Map(
+  nonLegacyDecisions
+    .filter((item) => item.decision_status === "FINAL")
+    .map((item) => [item.id, item]),
+);
+const mismatchedFinalPath = (pathReferrals.data ?? []).filter((referral) => {
+  if (!referral.path_decision_id) return false;
+  const decision = finalDecisionsById.get(referral.path_decision_id);
+  return Boolean(decision && referral.jalur !== decision.output_jalur);
+});
+if (mismatchedFinalPath.length > 0) {
+  blockers.push(`Mapping jalur aplikasi/enum tidak valid: ${mismatchedFinalPath.length}`);
+}
+
+const activeReferralStatuses = new Set([
+  "MENUNGGU_RUJUKAN",
+  "TERKIRIM",
+  "DITERIMA",
+  "DIPROSES",
+]);
+const referralCounts = new Map();
+for (const referral of pathReferrals.data ?? []) {
+  if (referral.assessment_id && activeReferralStatuses.has(referral.status)) {
+    referralCounts.set(
+      referral.assessment_id,
+      (referralCounts.get(referral.assessment_id) ?? 0) + 1,
+    );
+  }
+}
+const duplicateActiveReferrals = [...referralCounts.values()].filter(
+  (countValue) => countValue > 1,
+).length;
+if (duplicateActiveReferrals > 0) {
+  blockers.push(`Duplikasi referral aktif per asesmen: ${duplicateActiveReferrals}`);
+}
+const sentWithoutTimestamp = (pathReferrals.data ?? []).filter(
+  (item) => item.status === "TERKIRIM" && !item.sent_at,
+);
+if (sentWithoutTimestamp.length > 0) {
+  blockers.push(`Referral TERKIRIM tanpa sent_at: ${sentWithoutTimestamp.length}`);
+}
 const dinsosOpd = Array.isArray(dinsosAdmin.data?.master_opd) ? dinsosAdmin.data.master_opd[0] : dinsosAdmin.data?.master_opd;
 if (!dinsosAdmin.data?.auth_user_id || dinsosAdmin.data.status !== "AKTIF" || dinsosAdmin.data.role !== "INTERVENSI" || dinsosOpd?.kode_opd !== "DINSOS") {
   blockers.push("Admin Dinsos belum di-onboard secara valid");
@@ -225,6 +294,12 @@ if (waitingStabilization > 0) warnings.push(`Kasus menunggu stabilisasi: ${waiti
 if (waitingSplit > 0) warnings.push(`Kasus menunggu Split Jalur: ${waitingSplit}`);
 if (assessmentsNeedsReview > 0) warnings.push(`Asesmen membutuhkan review: ${assessmentsNeedsReview}`);
 if (assessmentsNeedReassessment > 0) warnings.push(`Asesmen meminta re-asesmen: ${assessmentsNeedReassessment}`);
+const approvedWithoutReferral = (approvedAssessments.data ?? []).filter(
+  (item) => !referralCounts.has(item.id),
+).length;
+if (approvedWithoutReferral > 0) {
+  warnings.push(`Asesmen disetujui belum diterbitkan referral: ${approvedWithoutReferral}`);
+}
 warnings.push("Kebijakan numeric scoring Dinsos belum disetujui");
 warnings.push("Rentang pendapatan asesmen menunggu persetujuan stakeholder Dinsos");
 

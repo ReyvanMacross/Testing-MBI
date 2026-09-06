@@ -221,7 +221,11 @@ export default async function DinsosAssessmentRegistryPage({ searchParams }: Pro
           assessment={selected}
           closeHref={buildHref(filters, page)}
           detailHref={buildHref(filters, page, selected.assessmentId)}
-          opds={options.opds.map((opd) => ({ id: opd.id, name: opd.name }))}
+          opds={options.opds.map((opd) => ({
+            id: opd.id,
+            name: opd.name,
+            allowedPaths: opd.allowedPaths,
+          }))}
         />
       )}
     </section>

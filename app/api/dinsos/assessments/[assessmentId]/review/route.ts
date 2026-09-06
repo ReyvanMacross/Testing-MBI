@@ -7,6 +7,7 @@ import {
   assertAssessmentId,
   parseAssessmentReviewInput,
 } from "@/lib/dinsos/assessment-registry-input";
+import { validateTargetOpdForPath } from "@/lib/dinsos/path-target-policy";
 import { ApiError, apiErrorResponse } from "@/lib/http/api-error-response";
 import { assertBodySize } from "@/lib/http/assert-body-size";
 import { assertSameOrigin } from "@/lib/http/assert-same-origin";
@@ -25,6 +26,9 @@ function mapReviewError(error: { message?: string } | null) {
   }
   if (message.includes("INVALID_REVIEW")) {
     return new ApiError("Keputusan review tidak valid.", 400);
+  }
+  if (message.includes("INVALID_TARGET_OPD")) {
+    return new ApiError("OPD rujukan tidak sesuai jalur yang dipilih.", 400);
   }
   return new ApiError("Review asesmen tidak dapat disimpan.", 400);
 }
@@ -49,6 +53,24 @@ export async function POST(
       .maybeSingle();
     if (assessmentError) throw assessmentError;
     if (!assessment) throw new ApiError("Asesmen tidak ditemukan.", 404);
+
+    if (input.decision === "APPROVED") {
+      const { data: targetOpd, error: targetError } = await admin
+        .from("master_opd")
+        .select("kode_opd")
+        .eq("id", input.targetOpdId)
+        .maybeSingle();
+      if (targetError) throw targetError;
+      if (
+        !targetOpd ||
+        !validateTargetOpdForPath(input.path, targetOpd.kode_opd)
+      ) {
+        throw new ApiError(
+          "OPD rujukan tidak sesuai jalur yang dipilih.",
+          400,
+        );
+      }
+    }
 
     const { data, error } = await admin.rpc("dinsos_review_assessment", {
       p_assessment_id: assessmentId,

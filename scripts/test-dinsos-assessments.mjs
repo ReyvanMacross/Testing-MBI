@@ -152,6 +152,17 @@ try {
     targetOpdId: (await admin.from("master_opd").select("id").eq("kode_opd", "DINSOS").single()).data.id,
     note: "Keputusan supervisor sudah diverifikasi dalam pengujian.",
   };
+  const invalidTarget = await admin
+    .from("master_opd")
+    .select("id")
+    .eq("kode_opd", "DISKOP")
+    .single();
+  assert.ifError(invalidTarget.error);
+  const invalidPolicyResponse = await post(reviewPath, dinsosCookie, {
+    ...approveBody,
+    targetOpdId: invalidTarget.data.id,
+  });
+  assert.equal(invalidPolicyResponse.status, 400);
   assert.equal((await post(reviewPath, "", approveBody)).status, 401);
   assert.equal((await post(reviewPath, diskCookie, approveBody)).status, 403);
   const profileId = process.env.DINSOS_ADMIN_PROFILE_ID;
@@ -253,6 +264,7 @@ try {
     nikMasked: "PASS",
     reviewAuthorization: "401/403/PASS",
     approve: "PASS",
+    pathTargetPolicy: "PASS",
     duplicateApprove: 409,
     requestReassessment: "PASS",
     reassessmentValidation: "PASS",

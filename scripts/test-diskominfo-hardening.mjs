@@ -33,6 +33,8 @@ const sensitiveTables = [
   "dinsos_assessment_types",
   "dinsos_assessments",
   "dinsos_assessment_reviews",
+  "dinsos_path_overrides",
+  "penentuan_jalur",
 ];
 const adminRpcs = [
   "list_managed_users",
@@ -45,6 +47,8 @@ const adminRpcs = [
   "dinsos_assessment_summary",
   "list_dinsos_assessments",
   "dinsos_review_assessment",
+  "dinsos_target_opd_allowed",
+  "dinsos_publish_path_referral",
 ];
 const migrationAdminRpcs = ["dinsos_warga_summary", "list_dinsos_warga"];
 const rpcBodies = {
@@ -52,6 +56,16 @@ const rpcBodies = {
     p_assessment_id: "00000000-0000-4000-8000-000000000001",
     p_actor_id: "00000000-0000-4000-8000-000000000002",
     p_decision: "APPROVED",
+  },
+  dinsos_target_opd_allowed: {
+    p_path: "PEKERJA",
+    p_target_opd_id: "00000000-0000-4000-8000-000000000001",
+  },
+  dinsos_publish_path_referral: {
+    p_case_id: "00000000-0000-4000-8000-000000000001",
+    p_actor_id: "00000000-0000-4000-8000-000000000002",
+    p_path: "PEKERJA",
+    p_target_opd_id: "00000000-0000-4000-8000-000000000003",
   },
 };
 
@@ -260,11 +274,12 @@ const mutationRoutes = [
   "app/api/dinsos/warga/[wargaId]/route.ts",
   "app/api/dinsos/assessments/route.ts",
   "app/api/dinsos/assessments/[assessmentId]/review/route.ts",
+  "app/api/dinsos/cases/[caseId]/path/publish/route.ts",
 ];
 for (const route of mutationRoutes) {
   const source = await readFile(path.join(PROJECT_ROOT, route), "utf8");
   assert.match(source, /assertSameOrigin\(request\)|assertSameOrigin\(_request\)/);
-  if (route.includes("/admin/") || route.includes("/login/")) {
+  if (!route.includes("/logout/")) {
     assert.match(source, /assertBodySize\(request|assertBodySize\(_request/);
   }
 }

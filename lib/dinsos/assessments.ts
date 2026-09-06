@@ -3,6 +3,11 @@ import "server-only";
 import { maskNik } from "@/lib/privacy/mask-nik";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+import {
+  getAllowedTargetOpdCodes,
+  getAllowedTargetOpds,
+} from "./path-target-policy";
+import { DINSOS_PATHS } from "./path-values";
 import type {
   AssessmentPath,
   AssessmentRegistryStatus,
@@ -38,6 +43,8 @@ export type AssessmentListItem = {
 };
 
 export type AssessmentDetail = AssessmentListItem & {
+  caseId: string | null;
+  caseStage: string | null;
   observation: string | null;
   reassessmentOfId: string | null;
   submittedAt: string;
@@ -134,18 +141,17 @@ export async function getAssessmentTypes() {
 }
 
 export async function getAssessmentFilterOptions() {
-  const admin = createAdminClient();
-  const [types, opdResult] = await Promise.all([
+  const [types, opds] = await Promise.all([
     getAssessmentTypes(),
-    admin.from("master_opd").select("id,kode_opd,nama_opd").order("nama_opd"),
+    getAllowedTargetOpds(),
   ]);
-  if (opdResult.error) throw new Error("Gagal mengambil pilihan OPD.");
   return {
     types,
-    opds: (opdResult.data ?? []).map((row) => ({
-      id: row.id,
-      code: row.kode_opd,
-      name: row.nama_opd,
+    opds: opds.map((opd) => ({
+      ...opd,
+      allowedPaths: DINSOS_PATHS.filter((path) =>
+        getAllowedTargetOpdCodes(path).includes(opd.code),
+      ),
     })),
   };
 }
@@ -157,7 +163,7 @@ export async function getAssessmentById(
   const { data: assessment, error } = await admin
     .from("dinsos_assessments")
     .select(
-      "id,assessment_code,assessment_date,warga_id,assessment_type_code,observation,field_recommendation,status,reassessment_of_id,created_by,submitted_at",
+      "id,assessment_code,assessment_date,warga_id,case_id,assessment_type_code,observation,field_recommendation,status,reassessment_of_id,created_by,submitted_at",
     )
     .eq("id", assessmentId)
     .maybeSingle();
@@ -207,7 +213,7 @@ export async function getAssessmentById(
     throw new Error("Gagal mengambil detail asesmen.");
   }
 
-  const [kelurahanResult, reviewerResult, targetOpdResult] = await Promise.all([
+  const [kelurahanResult, reviewerResult, targetOpdResult, caseResult] = await Promise.all([
     wargaResult.data.kelurahan_id
       ? admin
           .from("master_wilayah")
@@ -229,8 +235,20 @@ export async function getAssessmentById(
           .eq("id", reviewResult.data.target_opd_id)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    assessment.case_id
+      ? admin
+          .from("dinsos_cases")
+          .select("current_stage")
+          .eq("id", assessment.case_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
-  if (kelurahanResult.error || reviewerResult.error || targetOpdResult.error) {
+  if (
+    kelurahanResult.error ||
+    reviewerResult.error ||
+    targetOpdResult.error ||
+    caseResult.error
+  ) {
     throw new Error("Gagal mengambil detail asesmen.");
   }
 
@@ -257,6 +275,8 @@ export async function getAssessmentById(
 
   return {
     ...row,
+    caseId: assessment.case_id,
+    caseStage: caseResult.data?.current_stage ?? null,
     observation: assessment.observation,
     reassessmentOfId: assessment.reassessment_of_id,
     submittedAt: assessment.submitted_at,

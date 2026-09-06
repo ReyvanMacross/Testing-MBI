@@ -187,3 +187,115 @@ test.describe.serial("Dinas Sosial assessment registry", () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 });
+
+type PathFixtureState = {
+  wirausaha: {
+    caseId: string;
+    assessmentId: string;
+    assessmentCode: string;
+    targetOpdId: string;
+  };
+};
+
+test.describe.serial("Dinas Sosial split path", () => {
+  let pathFixture: PathFixtureState;
+
+  test.beforeAll(() => {
+    execFileSync(process.execPath, ["scripts/dev/seed-dinsos-path-fixtures.mjs"], {
+      cwd: process.cwd(), env: process.env, stdio: "pipe",
+    });
+    pathFixture = JSON.parse(
+      readFileSync(path.join(artifactDir, "path-fixture-state.json"), "utf8"),
+    );
+  });
+
+  test.afterAll(() => {
+    execFileSync(process.execPath, ["scripts/dev/cleanup-dinsos-path-fixtures.mjs"], {
+      cwd: process.cwd(), env: process.env, stdio: "pipe",
+    });
+  });
+
+  test("Admin Dinsos publishes an approved path referral", async ({ page }) => {
+    const identifier = process.env.E2E_DINSOS_IDENTIFIER ?? process.env.DINSOS_ADMIN_USERNAME;
+    const password = process.env.E2E_DINSOS_PASSWORD ?? process.env.DINSOS_ADMIN_PASSWORD;
+    if (!identifier || !password) throw new Error("Credential E2E Dinsos belum tersedia.");
+    await login(page, identifier, password);
+
+    await page.goto(`/dinsos/asesmen?assessment=${pathFixture.wirausaha.assessmentId}`);
+    const detail = page.getByRole("dialog", { name: pathFixture.wirausaha.assessmentCode });
+    await expect(detail).toBeVisible();
+    await detail.getByRole("link", { name: "Lanjut ke Split Jalur" }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`/dinsos/kasus/${pathFixture.wirausaha.caseId}/referral$`),
+    );
+    await expect(page.getByText("Hasil Analisis Jalur")).toBeVisible();
+    await expect(page.getByText("Jalur Wirausaha", { exact: true })).toBeVisible();
+    await expect(page.getByText("85/100")).toBeVisible();
+    await expect(page.getByLabel("Jalur Intervensi *")).toHaveValue("WIRAUSAHA");
+    await expect(page.getByLabel("Ditujukan ke OPD *")).toHaveValue(
+      pathFixture.wirausaha.targetOpdId,
+    );
+    await page.getByLabel("Catatan Referral").fill(
+      "Instruksi E2E untuk OPD tujuan tanpa data pribadi warga.",
+    );
+    await page.screenshot({
+      path: path.join(artifactDir, "17-split-jalur-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    ).toBeLessThanOrEqual(1);
+    await page.screenshot({
+      path: path.join(artifactDir, "18-split-jalur-mobile.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const publishResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes(`/api/dinsos/cases/${pathFixture.wirausaha.caseId}/path/publish`) &&
+        response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "Terbitkan Referral" }).click();
+    expect((await publishResponse).status()).toBe(201);
+    await expect(page.getByRole("heading", { name: "Referral Terkirim" })).toBeVisible();
+    await expect(page.getByText(/REF-\d{4}-\d{6}/)).toBeVisible();
+    await page.screenshot({
+      path: path.join(artifactDir, "19-referral-terkirim-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    ).toBeLessThanOrEqual(1);
+    await page.screenshot({
+      path: path.join(artifactDir, "20-referral-terkirim-mobile.png"),
+      fullPage: true,
+    });
+
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SECRET_KEY) {
+      const admin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SECRET_KEY,
+        { auth: { persistSession: false, autoRefreshToken: false } },
+      );
+      const result = await admin
+        .from("dinsos_cases")
+        .select("current_stage")
+        .eq("id", pathFixture.wirausaha.caseId)
+        .single();
+      expect(result.error).toBeNull();
+      expect(result.data?.current_stage).toBe("REFERRAL_TERKIRIM");
+    }
+
+    await page.getByRole("button", { name: "Keluar" }).click();
+    await expect(page).toHaveURL(/\/login$/);
+  });
+});

@@ -5,10 +5,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import type { AssessmentDetail } from "@/lib/dinsos/assessments";
+import type { DinsosPath } from "@/lib/dinsos/path-values";
 
 import styles from "./assessment-drawer.module.css";
 
-type OpdOption = { id: string; name: string };
+type OpdOption = {
+  id: string;
+  name: string;
+  allowedPaths: DinsosPath[];
+};
 
 export function AssessmentReviewDrawer({
   assessment,
@@ -24,6 +29,12 @@ export function AssessmentReviewDrawer({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [selectedPath, setSelectedPath] = useState<DinsosPath | "">(
+    assessment.fieldRecommendation ?? "",
+  );
+  const allowedOpds = opds.filter(
+    (opd) => selectedPath && opd.allowedPaths.includes(selectedPath),
+  );
 
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
@@ -117,7 +128,14 @@ export function AssessmentReviewDrawer({
             <h3>Keputusan Supervisor / Reviewer</h3>
             <label>
               <span>Tetapkan Jalur MBI *</span>
-              <select name="path" required defaultValue={assessment.fieldRecommendation ?? ""}>
+              <select
+                name="path"
+                required
+                value={selectedPath}
+                onChange={(event) =>
+                  setSelectedPath(event.target.value as DinsosPath | "")
+                }
+              >
                 <option value="" disabled>Pilih jalur</option>
                 <option value="PEKERJA">Pekerja</option>
                 <option value="WIRAUSAHA">Wirausaha</option>
@@ -126,9 +144,9 @@ export function AssessmentReviewDrawer({
             </label>
             <label>
               <span>Rencana OPD Rujukan *</span>
-              <select name="targetOpdId" required defaultValue="">
+              <select key={selectedPath} name="targetOpdId" required defaultValue="">
                 <option value="" disabled>Pilih OPD</option>
-                {opds.map((opd) => <option key={opd.id} value={opd.id}>{opd.name}</option>)}
+                {allowedOpds.map((opd) => <option key={opd.id} value={opd.id}>{opd.name}</option>)}
               </select>
             </label>
             <label>

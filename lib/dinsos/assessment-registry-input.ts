@@ -1,11 +1,12 @@
 import { ApiError } from "@/lib/http/api-error-response";
 
-export const ASSESSMENT_PATHS = [
-  "PEKERJA",
-  "WIRAUSAHA",
-  "PENGUATAN_DASAR",
-] as const;
-export type AssessmentPath = (typeof ASSESSMENT_PATHS)[number];
+import {
+  DINSOS_PATHS,
+  type DinsosPath,
+} from "./path-values";
+
+export const ASSESSMENT_PATHS = DINSOS_PATHS;
+export type AssessmentPath = DinsosPath;
 
 export const ASSESSMENT_STATUSES = [
   "DRAFT",

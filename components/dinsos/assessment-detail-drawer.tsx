@@ -121,6 +121,16 @@ export function AssessmentDetailDrawer({
             Cetak Laporan (PDF)
           </Link>
           {reassessmentHref && <Link href={reassessmentHref} className={styles.secondary}>Buat Re-Asesmen</Link>}
+          {assessment.status === "DISETUJUI" &&
+            assessment.caseId &&
+            assessment.caseStage === "MENUNGGU_SPLIT_JALUR" && (
+              <Link
+                href={`/dinsos/kasus/${assessment.caseId}/referral`}
+                className={styles.primary}
+              >
+                Lanjut ke Split Jalur
+              </Link>
+            )}
           {reviewHref && <Link href={reviewHref} className={styles.primary}>Review Asesmen</Link>}
         </footer>
       </aside>

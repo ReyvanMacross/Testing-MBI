@@ -72,6 +72,11 @@ const { error: capabilityError } = await admin.from("user_capabilities").upsert(
     capability: "DINSOS_ASSESSMENT_REVIEW",
     granted_by: profile.id,
   },
+  {
+    user_id: profile.id,
+    capability: "DINSOS_PATH_OVERRIDE",
+    granted_by: profile.id,
+  },
 ], { onConflict: "user_id,capability" });
 if (capabilityError) throw capabilityError;
 

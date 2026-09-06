@@ -39,9 +39,9 @@ export async function seedDinsosAssessmentFixtures() {
     await Promise.all([
       db.from("user_profiles").select("id").eq("email", "dinsos@bandung.go.id").single(),
       db.from("warga").select("id").order("id").limit(4),
-      db.from("master_opd").select("id").eq("kode_opd", "DINSOS").single(),
+      db.from("master_opd").select("id,kode_opd").in("kode_opd", ["DINSOS", "DISKOP", "DISNAKER"]),
     ]);
-  if (actorError || wargaError || opdError || !actor || !targetOpd || (warga ?? []).length < 4) {
+  if (actorError || wargaError || opdError || !actor || (targetOpd ?? []).length < 3 || (warga ?? []).length < 4) {
     throw actorError ?? wargaError ?? opdError ?? new Error("Fixture assessment prerequisites are missing.");
   }
 
@@ -58,6 +58,10 @@ export async function seedDinsosAssessmentFixtures() {
     { key: "needsReassessment", wargaId: warga[3].id, type: "INTERVENSI_MBI", recommendation: "PENGUATAN_DASAR", status: "MINTA_REASESMEN", decision: "REQUEST_REASSESSMENT", approvedPath: null },
   ];
   const state = {};
+  const targetByPath = new Map([
+    ["WIRAUSAHA", targetOpd.find((item) => item.kode_opd === "DISKOP")?.id],
+    ["PEKERJA", targetOpd.find((item) => item.kode_opd === "DISNAKER")?.id],
+  ]);
   for (const definition of definitions) {
     const { data: assessment, error } = await db
       .from("dinsos_assessments")
@@ -80,7 +84,7 @@ export async function seedDinsosAssessmentFixtures() {
         assessment_id: assessment.id,
         decision: definition.decision,
         approved_path: definition.approvedPath,
-        target_opd_id: definition.decision === "APPROVED" ? targetOpd.id : null,
+        target_opd_id: definition.decision === "APPROVED" ? targetByPath.get(definition.approvedPath) : null,
         reviewer_note:
           definition.decision === "APPROVED"
             ? "Keputusan fixture telah diverifikasi untuk pengujian antarmuka."

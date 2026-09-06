@@ -12,7 +12,7 @@ const migrations = (await readdir(migrationDirectory))
 assert.equal(migrations[0], "202609040000_initial_schema.sql");
 assert.equal(
   migrations.at(-1),
-  "202609060010_dinsos_assessment_registry.sql",
+  "202609060011_dinsos_split_path_foundation.sql",
 );
 
 for (const name of migrations) {
