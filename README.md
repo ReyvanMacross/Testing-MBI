@@ -8,7 +8,7 @@ Dari folder project, jalankan:
 npm.cmd run dev
 ```
 
-Buka http://localhost:3000/login. Alamat `/` otomatis mengarah ke `/login`.
+Buka http://localhost:3000/login.
 
 ## Cakupan tahap tampilan
 
