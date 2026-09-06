@@ -1,0 +1,103 @@
+.card {
+  min-width: 0;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #e1e5ea;
+  border-radius: 12px;
+}
+
+.title {
+  margin: 0 0 20px;
+  color: #171717;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  padding: 10px 12px;
+  border-bottom: 1px solid #dfe3e8;
+  background: #f7f7f7;
+  color: #454545;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #2f2f2f;
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.statusOnline {
+  background: #e8f3ec;
+  color: #216e46;
+}
+
+.statusSlow {
+  background: #fff4d6;
+  color: #a56600;
+}
+
+.statusOffline {
+  background: #fde9e7;
+  color: #b42318;
+}
+
+.statusNeutral {
+  background: #eeeeee;
+  color: #555555;
+}
+
+.emptyState {
+  display: flex;
+  min-height: 168px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: #666666;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+    line-height: 24px;
+  }
+}

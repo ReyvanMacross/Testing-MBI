@@ -1,0 +1,98 @@
+.mapCanvas {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.mapWrapper {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+}
+
+.district {
+  cursor: pointer;
+  vector-effect: non-scaling-stroke;
+  transition:
+    opacity 120ms ease,
+    stroke-width 120ms ease;
+}
+
+.district:hover {
+  opacity: 0.82;
+  stroke-width: 2.5;
+}
+
+.district:focus-visible {
+  outline: none;
+  stroke: #134b9e;
+  stroke-width: 3;
+}
+
+.legend {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  min-width: 156px;
+  padding: 12px 14px;
+  border: 1px solid #dde1e7;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 4px 14px rgb(17 24 39 / 7%);
+}
+
+.legendTitle {
+  margin: 0 0 8px;
+  color: #343a45;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.legendList {
+  display: grid;
+  gap: 5px;
+  padding: 0;
+  margin: 0;
+  color: #545b66;
+  font-size: 12px;
+  line-height: 16px;
+  list-style: none;
+}
+
+.legendList li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legendSwatch {
+  flex: 0 0 11px;
+  width: 11px;
+  height: 11px;
+  border: 1px solid rgb(17 24 39 / 14%);
+  border-radius: 2px;
+}
+
+@media (max-width: 680px) {
+  .legend {
+    position: static;
+    width: fit-content;
+    margin-top: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .district {
+    transition: none;
+  }
+}

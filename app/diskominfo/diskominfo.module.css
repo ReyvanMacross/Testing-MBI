@@ -1,0 +1,167 @@
+.page {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.pageHeader h1 {
+  margin: 0;
+  color: #1e232b;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 36px;
+  letter-spacing: -0.02em;
+}
+
+.pageHeader p {
+  margin: 6px 0 0;
+  color: #727985;
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 40px;
+  padding: 9px 16px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.primaryAction {
+  border: 1px solid #134b9e;
+  background: #134b9e;
+  color: #ffffff;
+}
+
+.secondaryAction {
+  border: 1px solid #d4d9e2;
+  background: #ffffff;
+  color: #343a45;
+}
+
+.primaryAction:hover {
+  background: #103f86;
+}
+
+.secondaryAction:hover {
+  border-color: #aeb8c7;
+  background: #fafbfc;
+}
+
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+  margin-top: 36px;
+  border-bottom: 1px solid #dfe3e9;
+  overflow-x: auto;
+}
+
+.tab {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 0 0 13px;
+  border: 0;
+  background: transparent;
+  color: #707783;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tabActive {
+  color: #134b9e;
+  font-weight: 600;
+}
+
+.tabActive::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: #134b9e;
+  content: "";
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.bottomGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+
+@media (max-width: 1200px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .pageHeader {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    flex: 1;
+  }
+
+  .tabs {
+    gap: 22px;
+    margin-top: 30px;
+  }
+}
+
+@media (max-width: 700px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .actions {
+    flex-direction: column;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    width: 100%;
+  }
+}

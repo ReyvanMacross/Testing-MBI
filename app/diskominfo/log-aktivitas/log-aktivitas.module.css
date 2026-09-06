@@ -1,0 +1,71 @@
+.page {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.pageHeader h1 {
+  margin: 0;
+  color: #1e232b;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 36px;
+  letter-spacing: -0.02em;
+}
+
+.pageHeader p {
+  margin: 6px 0 0;
+  color: #727985;
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.exportButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px 17px;
+  border: 1px solid #134b9e;
+  border-radius: 7px;
+  background: #134b9e;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  text-decoration: none;
+}
+
+.exportButton:hover {
+  background: #103f86;
+}
+
+.exportButton:focus-visible {
+  outline: 3px solid rgb(19 75 158 / 22%);
+  outline-offset: 2px;
+}
+
+.tableCard {
+  margin-top: 20px;
+  overflow: hidden;
+  border: 1px solid #e0e4ea;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+  }
+
+  .exportButton {
+    width: 100%;
+  }
+}

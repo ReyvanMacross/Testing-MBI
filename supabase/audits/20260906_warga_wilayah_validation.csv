@@ -1,0 +1,24 @@
+raw_kecamatan,raw_kelurahan,normalized_kecamatan,normalized_kelurahan,matched_kecamatan,matched_kelurahan,classification,reason,warga_count
+ANDIR,Bakti Jaya,andir,bakti jaya,Andir,,UNRESOLVED,kelurahan_not_found,6
+ANDIR,Cipendawa,andir,cipendawa,Andir,,UNRESOLVED,kelurahan_not_found,7
+ANDIR,Harapan Baru,andir,harapan baru,Andir,,UNRESOLVED,kelurahan_not_found,8
+ANDIR,Mekar Jaya,andir,mekar jaya,Andir,,UNRESOLVED,kelurahan_not_child_of_kecamatan,7
+ANDIR,Suka Maju,andir,suka maju,Andir,,UNRESOLVED,kelurahan_not_found,13
+ANTAPANI,Bakti Jaya,antapani,bakti jaya,Antapani,,UNRESOLVED,kelurahan_not_found,10
+ANTAPANI,Cipendawa,antapani,cipendawa,Antapani,,UNRESOLVED,kelurahan_not_found,3
+ANTAPANI,Harapan Baru,antapani,harapan baru,Antapani,,UNRESOLVED,kelurahan_not_found,7
+ANTAPANI,Mekar Jaya,antapani,mekar jaya,Antapani,,UNRESOLVED,kelurahan_not_child_of_kecamatan,7
+ANTAPANI,Suka Maju,antapani,suka maju,Antapani,,UNRESOLVED,kelurahan_not_found,11
+Batununggal,Batununggal,batununggal,batununggal,Batununggal,,UNRESOLVED,kelurahan_not_child_of_kecamatan,1
+BUAHBATU,Bakti Jaya,buahbatu,bakti jaya,Buahbatu,,UNRESOLVED,kelurahan_not_found,6
+BUAHBATU,Cipendawa,buahbatu,cipendawa,Buahbatu,,UNRESOLVED,kelurahan_not_found,4
+BUAHBATU,Harapan Baru,buahbatu,harapan baru,Buahbatu,,UNRESOLVED,kelurahan_not_found,5
+BUAHBATU,Mekar Jaya,buahbatu,mekar jaya,Buahbatu,,UNRESOLVED,kelurahan_not_child_of_kecamatan,5
+BUAHBATU,Suka Maju,buahbatu,suka maju,Buahbatu,,UNRESOLVED,kelurahan_not_found,12
+Cicendo,Cicendo,cicendo,cicendo,Cicendo,,UNRESOLVED,kelurahan_not_child_of_kecamatan,1
+COBLONG,Bakti Jaya,coblong,bakti jaya,Coblong,,UNRESOLVED,kelurahan_not_found,9
+COBLONG,Cipendawa,coblong,cipendawa,Coblong,,UNRESOLVED,kelurahan_not_found,9
+Coblong,Coblong,coblong,coblong,Coblong,,UNRESOLVED,kelurahan_not_child_of_kecamatan,1
+COBLONG,Harapan Baru,coblong,harapan baru,Coblong,,UNRESOLVED,kelurahan_not_found,11
+COBLONG,Mekar Jaya,coblong,mekar jaya,Coblong,,UNRESOLVED,kelurahan_not_child_of_kecamatan,6
+COBLONG,Suka Maju,coblong,suka maju,Coblong,,UNRESOLVED,kelurahan_not_found,4

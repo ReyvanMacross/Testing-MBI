@@ -1,0 +1,85 @@
+.card {
+  min-width: 0;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #e1e5ea;
+  border-radius: 12px;
+}
+
+.title {
+  margin: 0 0 20px;
+  color: #171717;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alertItem {
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.critical {
+  border-color: #f2c8c5;
+  background: #fff4f3;
+}
+
+.warning {
+  border-color: #ead9ad;
+  background: #fffaf0;
+}
+
+.info {
+  border-color: #d8e1ec;
+  background: #f4f7fb;
+}
+
+.alertBody {
+  min-width: 0;
+}
+
+.alertTitle {
+  margin: 0 0 4px;
+  color: #262626;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.alertMessage {
+  margin: 0 0 6px;
+  color: #454545;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.alertTime {
+  color: #707780;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.emptyState {
+  padding: 32px 12px;
+  color: #707780;
+  font-size: 14px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+    line-height: 24px;
+  }
+}

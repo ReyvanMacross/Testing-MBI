@@ -1,0 +1,37 @@
+.mapWrapper {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+}
+
+.subdistrict {
+  transition:
+    opacity 120ms ease,
+    stroke-width 120ms ease;
+}
+
+.subdistrict:hover {
+  opacity: 0.84;
+  stroke-width: 2;
+}
+
+.subdistrict:focus-visible {
+  outline: none;
+  stroke: #134b9e;
+  stroke-width: 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subdistrict {
+    transition: none;
+  }
+}

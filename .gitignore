@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/
@@ -36,6 +38,18 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Supabase CLI local state
+/supabase/.temp/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local verification artifacts
+/.evidence/
+/artifacts/
+
+# database backups can contain personal and operational data
+/backups/*.sql
+/backups/*.dump
+/backups/*.gz
