@@ -1,6 +1,6 @@
 # Platform MBI — Diskominfo Kota Bandung
 
-Halaman login berbasis Next.js App Router, TypeScript, dan CSS Modules. Desain mengikuti [Figma Login Page](https://www.figma.com/design/ZHjyXSP7KDT64CsjnpT7Pw/Project-Diskominfo?node-id=230-1391) dan referensi PNG di folder `design/login page` pada workspace desain.
+Halaman login berbasis Next.js App Router, TypeScript, dan CSS Modules. Desain mengikuti [Figma Login Page](https://www.figma.com/design/ZHjyXSP7KDT64CsjnpT7Pw/Project-Diskominfo?node-id=230-1391)
 
 ## Menjalankan project
 
@@ -11,8 +11,6 @@ npm.cmd run dev
 ```
 
 Buka http://localhost:3000/login. Alamat `/` otomatis mengarah ke `/login`.
-
-Di shell selain PowerShell, perintah `npm run dev` juga dapat digunakan. Untuk instalasi baru, jalankan `npm.cmd ci` terlebih dahulu dengan Node.js LTS.
 
 ## Cakupan tahap tampilan
 
