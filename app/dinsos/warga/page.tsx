@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { EditWargaDialog } from "@/components/dinsos/edit-warga-dialog";
+import { CreateAssessmentDialog } from "@/components/dinsos/create-assessment-dialog";
 import { WargaProfileDrawer } from "@/components/dinsos/warga-profile-drawer";
 import { hasCapability } from "@/lib/auth/require-capability";
 import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
@@ -13,6 +14,7 @@ import {
   type WargaRegistryFilters,
   type WargaRegistryItem,
 } from "@/lib/dinsos/warga";
+import { getAssessmentTypes } from "@/lib/dinsos/assessments";
 
 import styles from "./warga-page.module.css";
 
@@ -25,6 +27,8 @@ type Props = {
     page?: string;
     warga?: string;
     mode?: string;
+    intent?: string;
+    reassessmentOf?: string;
   }>;
 };
 
@@ -46,16 +50,19 @@ function buildHref(
   filters: WargaRegistryFilters,
   page: number,
   wargaId?: string,
-  mode?: "edit",
+  mode?: "edit" | "assessment-new",
+  reassessmentOf?: string,
 ) {
   const params = new URLSearchParams();
   if (filters.search) params.set("q", filters.search);
   if (filters.kelurahanId) params.set("kelurahan", filters.kelurahanId);
   if (filters.desil) params.set("desil", String(filters.desil));
   if (filters.verificationStatus) params.set("status", filters.verificationStatus);
+  if (filters.intent) params.set("intent", filters.intent);
   if (page > 1) params.set("page", String(page));
   if (wargaId) params.set("warga", wargaId);
   if (mode) params.set("mode", mode);
+  if (reassessmentOf) params.set("reassessmentOf", reassessmentOf);
   const query = params.toString();
   return query ? `/dinsos/warga?${query}` : "/dinsos/warga";
 }
@@ -106,13 +113,15 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
       ? params.status as WargaRegistryFilters["verificationStatus"]
       : undefined,
     page,
+    intent: params.intent === "assessment-new" ? "assessment-new" : undefined,
   };
   const actor = await requireDinsosActor();
-  const [summary, result, options, canEdit] = await Promise.all([
+  const [summary, result, options, canEdit, assessmentTypes] = await Promise.all([
     getDinsosWargaSummary(),
     getDinsosWarga(filters),
     getDinsosWargaOptions(),
     hasCapability(actor.profileId, "DINSOS_WARGA_EDIT"),
+    getAssessmentTypes(),
   ]);
 
   const selectedId = params.warga && UUID.test(params.warga) ? params.warga : null;
@@ -120,6 +129,12 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
   const profile = selectedId ? await getDinsosWargaProfile(selectedId) : null;
   if (selectedId && !profile) redirect(buildHref(filters, page));
   if (params.mode === "edit" && (!profile || !canEdit)) {
+    redirect(profile ? buildHref(filters, page, profile.wargaId) : buildHref(filters, page));
+  }
+  if (
+    params.reassessmentOf &&
+    (!UUID.test(params.reassessmentOf) || params.mode !== "assessment-new")
+  ) {
     redirect(profile ? buildHref(filters, page, profile.wargaId) : buildHref(filters, page));
   }
 
@@ -146,6 +161,12 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
         </p>
       )}
 
+      {filters.intent === "assessment-new" && (
+        <p className={styles.assessmentIntent} role="status">
+          Pilih warga melalui tombol Detail, lalu gunakan Buat Asesmen Baru pada profil warga.
+        </p>
+      )}
+
       <section className={styles.registryCard} aria-label="Daftar Data Warga">
         <form className={styles.filters} method="get">
           <label><span>Cari Warga</span><input name="q" type="search" defaultValue={filters.search} maxLength={100} placeholder="NIK atau Nama..." /></label>
@@ -153,7 +174,7 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
           <label><span>Desil</span><select name="desil" defaultValue={filters.desil ?? ""}><option value="">Semua</option>{Array.from({ length: 10 }, (_, index) => index + 1).map((item) => <option key={item} value={item}>Desil {item}</option>)}</select></label>
           <label><span>Status Verifikasi</span><select name="status" defaultValue={filters.verificationStatus ?? ""}><option value="">Semua Status</option><option value="TERVERIFIKASI">Terverifikasi</option><option value="BELUM">Belum Terverifikasi</option></select></label>
           <button type="submit" className={styles.filterButton}>☷ Filter</button>
-          {activeFilters && <Link href="/dinsos/warga" className={styles.resetButton}>Reset</Link>}
+          {activeFilters && <Link href={buildHref({ intent: filters.intent }, 1)} className={styles.resetButton}>Reset</Link>}
         </form>
 
         {result.warga.length ? (
@@ -180,8 +201,16 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
         </nav>
       </section>
 
-      {profile && params.mode !== "edit" && <WargaProfileDrawer profile={profile} closeHref={buildHref(filters, page)} editHref={buildHref(filters, page, profile.wargaId, "edit")} canEdit={canEdit} />}
+      {profile && params.mode !== "edit" && params.mode !== "assessment-new" && <WargaProfileDrawer profile={profile} closeHref={buildHref(filters, page)} editHref={buildHref(filters, page, profile.wargaId, "edit")} assessmentHref={buildHref(filters, page, profile.wargaId, "assessment-new")} canEdit={canEdit} />}
       {profile && params.mode === "edit" && <EditWargaDialog profile={profile} closeHref={buildHref(filters, page, profile.wargaId)} kelurahanOptions={options.kelurahan} maritalStatuses={options.maritalStatuses} />}
+      {profile && params.mode === "assessment-new" && (
+        <CreateAssessmentDialog
+          profile={profile}
+          types={assessmentTypes}
+          closeHref={buildHref(filters, page, profile.wargaId)}
+          reassessmentOf={params.reassessmentOf}
+        />
+      )}
     </section>
   );
 }

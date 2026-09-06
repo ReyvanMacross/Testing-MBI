@@ -12,6 +12,7 @@ type Props = {
   profile: WargaProfile;
   closeHref: string;
   editHref: string;
+  assessmentHref: string;
   canEdit: boolean;
 };
 
@@ -32,6 +33,7 @@ export function WargaProfileDrawer({
   profile,
   closeHref,
   editHref,
+  assessmentHref,
   canEdit,
 }: Props) {
   const router = useRouter();
@@ -95,15 +97,15 @@ export function WargaProfileDrawer({
               <div className={styles.historyList}>
                 {profile.assessments.map((assessment) => (
                   <article key={assessment.id}>
-                    <div><strong>Asesmen Sosial</strong><time dateTime={assessment.date}>{dateFormatter.format(new Date(assessment.date))}</time></div>
-                    <p>Status: {assessment.status}{assessment.readinessLevel ? ` · ${assessment.readinessLevel}` : ""}</p>
+                    <div><strong>{assessment.code}</strong><time dateTime={assessment.date}>{dateFormatter.format(new Date(`${assessment.date}T00:00:00+07:00`))}</time></div>
+                    <p>{assessment.typeLabel} · {assessment.status}{assessment.recommendation ? ` · ${assessment.recommendation.replaceAll("_", " ")}` : ""}</p>
                   </article>
                 ))}
               </div>
             ) : <p className={styles.empty}>Belum ada riwayat asesmen.</p>}
-            <button type="button" className={styles.secondaryAction} disabled title="Akan tersedia pada Tahap 14B">
+            <Link href={assessmentHref} className={styles.secondaryAction}>
               Buat Asesmen Baru
-            </button>
+            </Link>
           </section>
 
           <section className={styles.section}>

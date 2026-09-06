@@ -14,6 +14,7 @@ export type WargaRegistryFilters = {
   desil?: number;
   verificationStatus?: "TERVERIFIKASI" | "BELUM";
   page?: number;
+  intent?: "assessment-new";
 };
 
 export type WargaRegistryItem = {
@@ -55,9 +56,11 @@ export type WargaProfile = {
   updatedAt: string;
   assessments: Array<{
     id: string;
+    code: string;
+    typeLabel: string;
     status: string;
     date: string;
-    readinessLevel: string | null;
+    recommendation: string | null;
   }>;
   referrals: Array<{
     id: string;
@@ -76,6 +79,13 @@ function isMissingRpc(error: { code?: string; message?: string } | null) {
     error &&
       (error.code === "PGRST202" ||
         error.message?.includes("Could not find the function")),
+  );
+}
+
+function canUseDevelopmentRpcFallback() {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.DINSOS_ALLOW_RPC_FALLBACK === "true"
   );
 }
 
@@ -121,7 +131,7 @@ export async function getDinsosWargaSummary() {
     };
   }
 
-  if (!isMissingRpc(error)) {
+  if (!isMissingRpc(error) || !canUseDevelopmentRpcFallback()) {
     throw new Error("Gagal mengambil ringkasan Data Warga.");
   }
 
@@ -272,7 +282,9 @@ export async function getDinsosWarga(
   });
 
   if (error) {
-    if (isMissingRpc(error)) return getDinsosWargaFallback(filters);
+    if (isMissingRpc(error) && canUseDevelopmentRpcFallback()) {
+      return getDinsosWargaFallback(filters);
+    }
     throw new Error("Gagal mengambil daftar Data Warga.");
   }
 
@@ -391,7 +403,7 @@ export async function getDinsosWargaProfile(
     .maybeSingle();
   if (error || !warga) return null;
 
-  const [kelurahanResult, kecamatanResult, desilResult, verificationResult, casesResult, referralsResult, activePath] =
+  const [kelurahanResult, kecamatanResult, desilResult, verificationResult, assessmentsResult, referralsResult, assessmentTypesResult, activePath] =
     await Promise.all([
       warga.kelurahan_id
         ? admin
@@ -423,30 +435,25 @@ export async function getDinsosWargaProfile(
         .order("id", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      admin.from("dinsos_cases").select("id").eq("warga_id", wargaId),
+      admin
+        .from("dinsos_assessments")
+        .select("id,assessment_code,status,assessment_date,assessment_type_code,field_recommendation")
+        .eq("warga_id", wargaId)
+        .order("assessment_date", { ascending: false })
+        .limit(20),
       admin
         .from("referral_mbi")
         .select("id,referral_type,target_opd_id,target_program,status,sent_at")
         .eq("warga_id", wargaId)
         .order("sent_at", { ascending: false })
         .limit(20),
+      admin
+        .from("dinsos_assessment_types")
+        .select("code,list_label"),
       resolveActivePath(wargaId),
     ]);
-  if (casesResult.error || referralsResult.error) {
+  if (assessmentsResult.error || referralsResult.error || assessmentTypesResult.error) {
     throw new Error("Gagal mengambil profil Data Warga.");
-  }
-
-  const caseIds = (casesResult.data ?? []).map((row) => row.id);
-  const assessmentResult = caseIds.length
-    ? await admin
-        .from("dinsos_asesmen_sosial")
-        .select("id,status,completed_at,created_at,readiness_level")
-        .in("case_id", caseIds)
-        .order("created_at", { ascending: false })
-        .limit(20)
-    : { data: [], error: null };
-  if (assessmentResult.error) {
-    throw new Error("Gagal mengambil riwayat asesmen warga.");
   }
 
   const opdIds = Array.from(
@@ -462,6 +469,9 @@ export async function getDinsosWargaProfile(
   if (opdResult.error) throw new Error("Gagal mengambil OPD referral.");
   const opdMap = new Map(
     (opdResult.data ?? []).map((row) => [row.id, row.nama_opd]),
+  );
+  const assessmentTypeMap = new Map(
+    (assessmentTypesResult.data ?? []).map((row) => [row.code, row.list_label]),
   );
 
   return {
@@ -481,11 +491,13 @@ export async function getDinsosWargaProfile(
     pekerjaan: warga.pekerjaan,
     activePath,
     updatedAt: warga.updated_at,
-    assessments: (assessmentResult.data ?? []).map((row) => ({
+    assessments: (assessmentsResult.data ?? []).map((row) => ({
       id: row.id,
+      code: row.assessment_code,
+      typeLabel: assessmentTypeMap.get(row.assessment_type_code) ?? row.assessment_type_code,
       status: row.status,
-      date: row.completed_at ?? row.created_at,
-      readinessLevel: row.readiness_level,
+      date: row.assessment_date,
+      recommendation: row.field_recommendation,
     })),
     referrals: (referralsResult.data ?? []).map((row) => ({
       id: row.id,

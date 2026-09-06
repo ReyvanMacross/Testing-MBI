@@ -16,7 +16,7 @@ export function DinsosHeader({ namaLengkap }: { namaLengkap: string }) {
     } finally { setBusy(false); }
   }
   return (
-    <header className={styles.header}>
+    <header className={styles.header} data-shell-region="header">
       <a href="/dinsos" className={styles.brand}>Platform MBI — Diskominfo Kota Bandung</a>
       <label className={styles.search}><span className={styles.srOnly}>Cari</span><input type="search" placeholder="Cari..." /></label>
       <div className={styles.account}>

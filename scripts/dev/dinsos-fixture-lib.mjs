@@ -9,7 +9,10 @@ export async function client() { await loadProjectEnvironment(); const {supabase
 export async function cleanupDinsosFixtures() {
   const db=await client(); const {data,error}=await db.from("dinsos_cases").select("id").eq("is_fixture",true); if(error)throw error;
   if((data??[]).length>20)throw new Error(`Fixture cleanup guard: found ${data.length} cases.`);
+  const caseIds=(data??[]).map(x=>x.id);
+  const registryResult=caseIds.length?await db.from("dinsos_asesmen_sosial").select("registry_assessment_id").in("case_id",caseIds).not("registry_assessment_id","is",null):{data:[],error:null};if(registryResult.error)throw registryResult.error;
   if(data?.length){const {error:deleteError}=await db.from("dinsos_cases").delete().in("id",data.map(x=>x.id));if(deleteError)throw deleteError;}
+  const registryIds=(registryResult.data??[]).map(x=>x.registry_assessment_id);if(registryIds.length){const {error:deleteAssessmentError}=await db.from("dinsos_assessments").delete().in("id",registryIds);if(deleteAssessmentError)throw deleteAssessmentError;}
   await rm(stateFile,{force:true}); return data?.length??0;
 }
 

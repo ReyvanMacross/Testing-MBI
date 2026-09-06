@@ -27,6 +27,9 @@
     "dev:cleanup-dinsos": "node scripts/dev/cleanup-dinsos-fixtures.mjs",
     "test:dinsos": "node scripts/test-dinsos-workflow.mjs",
     "test:dinsos-warga": "node scripts/test-dinsos-warga.mjs",
+    "dev:seed-dinsos-assessments": "node scripts/dev/seed-dinsos-assessment-fixtures.mjs",
+    "dev:cleanup-dinsos-assessments": "node scripts/dev/cleanup-dinsos-assessment-fixtures.mjs",
+    "test:dinsos-assessments": "node scripts/test-dinsos-assessments.mjs",
     "test:e2e": "playwright test",
     "verify:diskominfo": "npm run test:desil-map && npm run test:activity-logs && npm run test:integrations && npm run audit:readiness && npm run lint && npm run build"
   },

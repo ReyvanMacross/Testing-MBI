@@ -73,6 +73,9 @@ const [
   dinsosAdmin,
   waitingStabilization,
   waitingSplit,
+  assessmentFixtures,
+  assessmentsNeedsReview,
+  assessmentsNeedReassessment,
 ] = await Promise.all([
   count(
     admin
@@ -127,6 +130,9 @@ const [
   admin.from("user_profiles").select("id,auth_user_id,status,role,master_opd(kode_opd)").eq("email", "dinsos@bandung.go.id").maybeSingle(),
   count(admin.from("dinsos_cases").select("id", { count: "exact", head: true }).eq("current_stage", "MENUNGGU_STABILISASI")),
   count(admin.from("dinsos_cases").select("id", { count: "exact", head: true }).eq("current_stage", "MENUNGGU_SPLIT_JALUR")),
+  count(admin.from("dinsos_assessments").select("id", { count: "exact", head: true }).eq("is_fixture", true)),
+  count(admin.from("dinsos_assessments").select("id", { count: "exact", head: true }).eq("status", "PERLU_REVIEW")),
+  count(admin.from("dinsos_assessments").select("id", { count: "exact", head: true }).eq("status", "MINTA_REASESMEN")),
 ]);
 
 if (integrations.error) throw integrations.error;
@@ -137,6 +143,21 @@ const warnings = [];
 const info = [];
 const allowedHosts = hostAllowlist();
 
+const assessmentBrowserReadable = [];
+for (const table of [
+  "dinsos_assessment_types",
+  "dinsos_assessments",
+  "dinsos_assessment_reviews",
+]) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*&limit=1`, {
+    headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "" },
+  });
+  if (![401, 403].includes(response.status)) assessmentBrowserReadable.push(table);
+}
+if (assessmentBrowserReadable.length > 0) {
+  blockers.push(`Tabel review asesmen dapat dibaca browser: ${assessmentBrowserReadable.join(", ")}`);
+}
+
 if (activeTestAccounts > 0) {
   blockers.push(`Akun uji aktif: ${activeTestAccounts}`);
 }
@@ -144,6 +165,7 @@ if (developmentIntegrations > 0) {
   blockers.push(`Fixture integrasi development: ${developmentIntegrations}`);
 }
 if (dinsosFixtures > 0) blockers.push(`Fixture kasus Dinsos: ${dinsosFixtures}`);
+if (assessmentFixtures > 0) blockers.push(`Fixture asesmen Dinsos: ${assessmentFixtures}`);
 const dinsosOpd = Array.isArray(dinsosAdmin.data?.master_opd) ? dinsosAdmin.data.master_opd[0] : dinsosAdmin.data?.master_opd;
 if (!dinsosAdmin.data?.auth_user_id || dinsosAdmin.data.status !== "AKTIF" || dinsosAdmin.data.role !== "INTERVENSI" || dinsosOpd?.kode_opd !== "DINSOS") {
   blockers.push("Admin Dinsos belum di-onboard secara valid");
@@ -201,6 +223,8 @@ if (process.env.APP_ORIGIN?.includes("localhost")) {
 }
 if (waitingStabilization > 0) warnings.push(`Kasus menunggu stabilisasi: ${waitingStabilization}`);
 if (waitingSplit > 0) warnings.push(`Kasus menunggu Split Jalur: ${waitingSplit}`);
+if (assessmentsNeedsReview > 0) warnings.push(`Asesmen membutuhkan review: ${assessmentsNeedsReview}`);
+if (assessmentsNeedReassessment > 0) warnings.push(`Asesmen meminta re-asesmen: ${assessmentsNeedReassessment}`);
 warnings.push("Kebijakan numeric scoring Dinsos belum disetujui");
 warnings.push("Rentang pendapatan asesmen menunggu persetujuan stakeholder Dinsos");
 

@@ -30,6 +30,9 @@ const sensitiveTables = [
   "dinsos_case_results",
   "referral_mbi",
   "user_capabilities",
+  "dinsos_assessment_types",
+  "dinsos_assessments",
+  "dinsos_assessment_reviews",
 ];
 const adminRpcs = [
   "list_managed_users",
@@ -39,8 +42,18 @@ const adminRpcs = [
   "integration_summary",
   "dinsos_queue_summary",
   "list_dinsos_cases",
+  "dinsos_assessment_summary",
+  "list_dinsos_assessments",
+  "dinsos_review_assessment",
 ];
 const migrationAdminRpcs = ["dinsos_warga_summary", "list_dinsos_warga"];
+const rpcBodies = {
+  dinsos_review_assessment: {
+    p_assessment_id: "00000000-0000-4000-8000-000000000001",
+    p_actor_id: "00000000-0000-4000-8000-000000000002",
+    p_decision: "APPROVED",
+  },
+};
 
 async function assertDenied(response, label) {
   const body = await response.text();
@@ -63,7 +76,7 @@ for (const rpc of adminRpcs) {
     await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
       method: "POST",
       headers: { apikey: publishableKey, "Content-Type": "application/json" },
-      body: "{}",
+      body: JSON.stringify(rpcBodies[rpc] ?? {}),
     }),
     `anon RPC ${rpc}`,
   );
@@ -104,7 +117,7 @@ for (const rpc of adminRpcs) {
     await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
       method: "POST",
       headers: { ...authenticatedHeaders, "Content-Type": "application/json" },
-      body: "{}",
+      body: JSON.stringify(rpcBodies[rpc] ?? {}),
     }),
     `authenticated RPC ${rpc}`,
   );
@@ -245,6 +258,8 @@ const mutationRoutes = [
   "app/api/dinsos/cases/[caseId]/result/confirm/route.ts",
   "app/api/dinsos/cases/[caseId]/stabilization/send/route.ts",
   "app/api/dinsos/warga/[wargaId]/route.ts",
+  "app/api/dinsos/assessments/route.ts",
+  "app/api/dinsos/assessments/[assessmentId]/review/route.ts",
 ];
 for (const route of mutationRoutes) {
   const source = await readFile(path.join(PROJECT_ROOT, route), "utf8");
