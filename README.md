@@ -1,7 +1,5 @@
 # Platform MBI — Diskominfo Kota Bandung
 
-Halaman login berbasis Next.js App Router, TypeScript, dan CSS Modules. Desain mengikuti [Figma Login Page](https://www.figma.com/design/ZHjyXSP7KDT64CsjnpT7Pw/Project-Diskominfo?node-id=230-1391)
-
 ## Menjalankan project
 
 Dari folder project, jalankan:
