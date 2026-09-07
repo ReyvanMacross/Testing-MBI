@@ -5,7 +5,9 @@ import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
 import {
+  combineDistributions,
   createDistribution,
+  createDistributionFromCounts,
   getDominantDesil,
   normalizeDesil,
 } from "../lib/diskominfo/desil-statistics.ts";
@@ -36,6 +38,12 @@ async function main() {
   const tiedDistribution = createDistribution([1, 1, 2, 2, 4]);
   assert.equal(getDominantDesil(tiedDistribution), 1);
   assert.equal(getDominantDesil(createDistribution([])), null);
+  const countedDistribution = createDistributionFromCounts([1, 2, 3, 4, 5]);
+  assert.equal(countedDistribution[4].count, 5);
+  assert.equal(
+    combineDistributions([countedDistribution, countedDistribution])[4].count,
+    10,
+  );
 
   await loadProjectEnvironment();
   const { supabaseUrl, supabaseSecretKey } = getSupabaseAdminEnvironment();
@@ -112,6 +120,59 @@ async function main() {
   assert.equal(coblongFeatures.length, 6);
   assert.equal(andirFeatures.length, 6);
 
+  const publicReference = JSON.parse(
+    await readFile(
+      path.join(
+        PROJECT_ROOT,
+        "data/reference/bandung-public-desil-2025.json",
+      ),
+      "utf8",
+    ),
+  );
+  assert.equal(publicReference.version, 1);
+  assert.equal(publicReference.datasets.length, 3);
+
+  const publicDistrictNames = new Set();
+  for (const dataset of publicReference.datasets) {
+    assert.ok(!publicDistrictNames.has(normalizeWilayah(dataset.district)));
+    publicDistrictNames.add(normalizeWilayah(dataset.district));
+    assert.match(dataset.sourceUrl, /^https:\/\/(multisite\.)?bandung\.go\.id\//);
+    assert.ok(dataset.referencePeriod);
+    assert.equal(dataset.unit, "JIWA");
+
+    const district = districts.find(
+      (row) => normalizeWilayah(row.nama) === normalizeWilayah(dataset.district),
+    );
+    assert.ok(district, `${dataset.district} must exist in master_wilayah`);
+
+    const { data: officialChildren, error: officialChildrenError } =
+      await supabase
+        .from("master_wilayah")
+        .select("nama")
+        .eq("jenis", "KELURAHAN")
+        .eq("parent_id", district.id);
+    assert.ifError(officialChildrenError);
+    const officialNames = new Set(
+      (officialChildren ?? []).map((row) => normalizeWilayah(row.nama)),
+    );
+    const referenceNames = new Set();
+
+    for (const subdistrict of dataset.subdistricts) {
+      const normalizedName = normalizeWilayah(subdistrict.name);
+      assert.ok(officialNames.has(normalizedName));
+      assert.ok(!referenceNames.has(normalizedName));
+      referenceNames.add(normalizedName);
+      assert.equal(subdistrict.counts.length, 5);
+      assert.ok(
+        subdistrict.counts.every(
+          (count) => Number.isSafeInteger(count) && count >= 0,
+        ),
+      );
+    }
+
+    assert.equal(referenceNames.size, officialNames.size);
+  }
+
   console.log("normalizeWilayah: PASS");
   console.log("normalizeDesil: PASS");
   console.log("dominantDesil tie rule: PASS");
@@ -119,6 +180,7 @@ async function main() {
   console.log("subdistrict query: Coblong 6 kelurahan PASS");
   console.log(`resolved Coblong rows: ${resolvedRows?.length ?? 0}`);
   console.log("boundary: Coblong 6 / Andir 6 PASS");
+  console.log("public DTSEN reference: 3 kecamatan / 14 kelurahan PASS");
 }
 
 main().catch((error) => {

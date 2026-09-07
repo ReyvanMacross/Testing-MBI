@@ -67,6 +67,46 @@ export function createDistribution(values: unknown[]): DesilBucket[] {
   });
 }
 
+export function createDistributionFromCounts(counts: number[]): DesilBucket[] {
+  if (
+    counts.length !== DESIL_VALUES.length ||
+    counts.some((count) => !Number.isSafeInteger(count) || count < 0)
+  ) {
+    throw new Error("Hitungan distribusi desil tidak valid.");
+  }
+
+  const totalWithDesil = counts.reduce((total, count) => total + count, 0);
+
+  return DESIL_VALUES.map((desil, index) => {
+    const count = counts[index];
+
+    return {
+      desil,
+      label: desil === 5 ? "Desil 5+" : `Desil ${desil}`,
+      count,
+      percentage:
+        totalWithDesil === 0
+          ? 0
+          : Math.round((count / totalWithDesil) * 100),
+    };
+  });
+}
+
+export function combineDistributions(
+  distributions: DesilBucket[][],
+): DesilBucket[] {
+  const counts = DESIL_VALUES.map((desil) =>
+    distributions.reduce(
+      (total, distribution) =>
+        total +
+        (distribution.find((bucket) => bucket.desil === desil)?.count ?? 0),
+      0,
+    ),
+  );
+
+  return createDistributionFromCounts(counts);
+}
+
 export function getDominantDesil(
   distribution: DesilBucket[],
 ): DesilValue | null {

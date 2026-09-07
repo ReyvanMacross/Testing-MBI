@@ -1,0 +1,93 @@
+.kanvasPeta {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  padding-top: 54px;
+}
+
+.wadahPeta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.bingkaiPeta {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+}
+
+.peta {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+}
+
+.wilayahKecamatan {
+  cursor: pointer;
+  vector-effect: non-scaling-stroke;
+  transition:
+    filter 120ms ease,
+    stroke-width 120ms ease;
+}
+
+.wilayahKecamatan:hover {
+  filter: brightness(1.08) saturate(1.08);
+  stroke-width: 2.5;
+}
+
+.wilayahKecamatan:focus-visible {
+  outline: none;
+  stroke: #134b9e;
+  stroke-width: 3;
+}
+
+.lapisanLabel {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.labelKecamatan {
+  position: absolute;
+  display: grid;
+  transform: translate(-50%, -50%);
+  color: #111722;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 0.95;
+  text-align: center;
+  text-shadow:
+    -1px -1px 0 rgb(255 255 255 / 96%),
+    1px -1px 0 rgb(255 255 255 / 96%),
+    -1px 1px 0 rgb(255 255 255 / 96%),
+    1px 1px 0 rgb(255 255 255 / 96%),
+    0 0 4px #ffffff;
+  white-space: nowrap;
+}
+
+@media (max-width: 680px) {
+  .kanvasPeta {
+    padding-top: 70px;
+  }
+
+  .wadahPeta {
+    width: calc(100% + 12px);
+    margin-inline: -6px;
+  }
+
+  .labelKecamatan {
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wilayahKecamatan {
+    transition: none;
+  }
+}

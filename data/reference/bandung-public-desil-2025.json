@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "datasets": [
+    {
+      "district": "Kiaracondong",
+      "referencePeriod": "2025",
+      "publishedAt": "2026-04",
+      "sourceTitle": "Renstra Kecamatan Kiaracondong 2025–2029, Tabel 2.8",
+      "sourceUrl": "https://multisite.bandung.go.id/kecamatan-kiaracondong/wp-content/uploads/sites/87/2026/04/Dokumen-Renstra-Kecamatan-Kiaracondong-Tahun-2025-2029_compressed.pdf",
+      "unit": "JIWA",
+      "subdistricts": [
+        { "name": "Sukapura", "counts": [1241, 1271, 1792, 1902, 2156] },
+        { "name": "Kebon Jayanti", "counts": [596, 689, 1002, 996, 1196] },
+        { "name": "Babakan Surabaya", "counts": [947, 1208, 1336, 1682, 2136] },
+        { "name": "Cicaheum", "counts": [823, 952, 1122, 1329, 1652] },
+        { "name": "Babakansari", "counts": [1250, 1650, 1872, 2459, 3121] },
+        { "name": "Kebon Kangkung", "counts": [605, 647, 918, 860, 1056] }
+      ]
+    },
+    {
+      "district": "Rancasari",
+      "referencePeriod": "Renstra 2025–2029",
+      "publishedAt": "2026-05",
+      "sourceTitle": "Renstra Kecamatan Rancasari 2025–2029, Tabel 2.14",
+      "sourceUrl": "https://multisite.bandung.go.id/kecamatan-rancasari/wp-content/uploads/sites/83/2026/05/RENSTRA_KEC_RANCASARI_2025-2029_0210025_-OK-1_compressed.pdf",
+      "unit": "JIWA",
+      "subdistricts": [
+        { "name": "Cipamokolan", "counts": [538, 596, 560, 871, 1034] },
+        { "name": "Derwati", "counts": [395, 646, 831, 1025, 1389] },
+        { "name": "Manjahlega", "counts": [185, 248, 316, 522, 615] },
+        { "name": "Mekar Jaya", "counts": [445, 565, 659, 871, 1047] }
+      ]
+    },
+    {
+      "district": "Sumur Bandung",
+      "referencePeriod": "Renstra 2025–2029",
+      "publishedAt": "2026-04",
+      "sourceTitle": "Renstra Kecamatan Sumur Bandung 2025–2029, Tabel 2.23",
+      "sourceUrl": "https://multisite.bandung.go.id/kecamatan-sumur-bandung/wp-content/uploads/sites/86/2026/04/RENSTRA-2025-2029-KECAMATAN-SUMUR-BANDUNG-Revisi-Telaah-Final_-1.pdf",
+      "unit": "JIWA",
+      "subdistricts": [
+        { "name": "Braga", "counts": [378, 294, 286, 357, 356] },
+        { "name": "Merdeka", "counts": [114, 123, 123, 136, 238] },
+        { "name": "Kebon Pisang", "counts": [490, 636, 697, 783, 896] },
+        { "name": "Babakan Ciamis", "counts": [229, 374, 290, 407, 476] }
+      ]
+    }
+  ]
+}

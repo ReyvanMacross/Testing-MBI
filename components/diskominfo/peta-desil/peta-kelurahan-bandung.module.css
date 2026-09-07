@@ -1,0 +1,77 @@
+.wadahPeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  padding-top: 58px;
+}
+
+.peta {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+}
+
+.wilayahKelurahan {
+  cursor: pointer;
+  transition:
+    filter 120ms ease,
+    stroke-width 120ms ease;
+}
+
+.wilayahKelurahan:hover {
+  filter: brightness(1.08) saturate(1.08);
+  stroke-width: 2;
+}
+
+.wilayahKelurahan:focus-visible {
+  outline: none;
+  stroke: #134b9e;
+  stroke-width: 3;
+}
+
+.terpilih {
+  stroke: #134b9e;
+  stroke-width: 4;
+}
+
+.lapisanLabel {
+  pointer-events: none;
+}
+
+.labelKelurahan {
+  fill: #151922;
+  font-size: 14px;
+  font-weight: 750;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgb(255 255 255 / 88%);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+}
+
+.labelTerpilih {
+  fill: #0f4f9f;
+}
+
+@media (max-width: 680px) {
+  .wadahPeta {
+    padding-top: 68px;
+  }
+
+  .labelKelurahan {
+    font-size: 17px;
+    font-weight: 800;
+    stroke-width: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wilayahKelurahan {
+    transition: none;
+  }
+}

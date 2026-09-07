@@ -18,3 +18,20 @@ Hierarki nama pada CSV mengikuti tabel sumber. Ejaan `Dungus Cariang` dan `Kebon
 - Sumber: https://geoservices.big.go.id/rbi/rest/services/BATASWILAYAH/BATAS_DESAKEL_AR/MapServer/0
 
 `boundary-name-aliases.json` hanya memuat perbedaan ejaan yang ditemukan antara snapshot BIG dan master Pemkot/BPS. Alias diberi konteks kecamatan dan tidak melakukan fuzzy matching.
+
+## Referensi desil publik 2025
+
+`bandung-public-desil-2025.json` berisi agregat jumlah jiwa Desil 1?5 yang
+ditranskripsi dari dokumen resmi Pemerintah Kota Bandung. Data ini digunakan
+sebagai referensi peta hanya ketika suatu wilayah belum mempunyai data desil
+internal MBI.
+
+Aturan penggunaan:
+
+- Data internal MBI selalu diprioritaskan per wilayah.
+- Referensi publik tidak dimasukkan ke tabel `warga` atau `penetapan_desil`.
+- Agregat dari periode/sumber berbeda tidak dianggap sebagai cakupan penuh Kota
+  Bandung.
+- Total DTKS atau indikator kemiskinan lain tidak dikonversi menjadi desil.
+- Setiap dataset wajib mempunyai URL sumber, periode referensi, satuan, dan lima
+  hitungan desil non-negatif untuk setiap kelurahan.

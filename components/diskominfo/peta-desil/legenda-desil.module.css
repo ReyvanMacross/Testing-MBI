@@ -1,0 +1,98 @@
+.legenda {
+  border: 1px solid #dde3eb;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 95%);
+  box-shadow: 0 5px 18px rgb(15 37 66 / 8%);
+  color: #545b66;
+}
+
+.panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  min-width: 164px;
+  padding: 12px 14px;
+}
+
+.ringkas {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  max-width: calc(100% - 16px);
+  padding: 10px 12px;
+}
+
+.judul {
+  margin: 0 0 8px;
+  color: #343a45;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 18px;
+}
+
+.daftar {
+  display: grid;
+  gap: 5px;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  list-style: none;
+}
+
+.ringkas .daftar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.daftar li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ringkas .daftar li {
+  gap: 5px;
+}
+
+.warna {
+  flex: 0 0 11px;
+  width: 11px;
+  height: 11px;
+  border: 1px solid rgb(17 24 39 / 14%);
+  border-radius: 2px;
+}
+
+.ringkas .warna {
+  flex-basis: 10px;
+  width: 10px;
+  height: 10px;
+}
+
+.tanpaData {
+  background: repeating-linear-gradient(
+    45deg,
+    #edf1f5 0,
+    #edf1f5 3px,
+    #cfd7e1 3px,
+    #cfd7e1 5px
+  );
+}
+
+@media (max-width: 680px) {
+  .panel,
+  .ringkas {
+    position: static;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 14px;
+  }
+
+  .panel .daftar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 14px;
+  }
+}
