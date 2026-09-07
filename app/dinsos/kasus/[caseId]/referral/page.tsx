@@ -119,10 +119,10 @@ export default async function ReferralPage({
             <span aria-hidden="true">✓</span>
             <div>
               <p>Status Referral</p>
-              <h2>Referral Terkirim</h2>
-              <time dateTime={pathContext.existingReferral.sentAt}>
+              <h2>{pathContext.existingReferral.status === "MENUNGGU_RUJUKAN" ? "Menunggu Rujukan" : "Referral Terkirim"}</h2>
+              {pathContext.existingReferral.sentAt ? <time dateTime={pathContext.existingReferral.sentAt}>
                 {dateTime.format(new Date(pathContext.existingReferral.sentAt))}
-              </time>
+              </time> : <small>Jalur sudah final dan menunggu proses pengiriman ke OPD.</small>}
             </div>
           </header>
           <dl>
@@ -132,10 +132,12 @@ export default async function ReferralPage({
             <div><dt>Jalur Ditetapkan</dt><dd>{pathContext.existingReferral.decisionSource === "MANUAL_OVERRIDE" ? "Override manual berwenang" : "Rekomendasi supervisor"}</dd></div>
             <div className={referralStyles.full}><dt>Catatan</dt><dd>{pathContext.existingReferral.instruction ?? "Tidak ada catatan referral."}</dd></div>
           </dl>
-          <button type="button" disabled aria-disabled="true" title="Pelacakan tersedia pada Tahap 14D">
-            Lihat Status di Pelacakan Referral
-          </button>
-          <small>Pelacakan tersedia pada modul Split Jalur &amp; Referral.</small>
+          <Link
+            className={referralStyles.trackingLink}
+            href={`/dinsos/referral?referral=${pathContext.existingReferral.id}&mode=${pathContext.existingReferral.status === "MENUNGGU_RUJUKAN" ? "process" : "progress"}`}
+          >
+            {pathContext.existingReferral.status === "MENUNGGU_RUJUKAN" ? "Proses Rujukan" : "Lihat Status di Pelacakan Referral"}
+          </Link>
         </section>
       ) : (
         <div className={referralStyles.inkubasiGrid}>

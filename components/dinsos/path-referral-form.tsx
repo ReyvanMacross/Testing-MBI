@@ -66,7 +66,7 @@ export function PathReferralForm({
             path,
             targetOpdId,
             overrideReason: overrideUsed ? form.get("overrideReason") : null,
-            referralNote: form.get("referralNote"),
+            referralNote: null,
           }),
         },
       );
@@ -74,7 +74,7 @@ export function PathReferralForm({
       if (!response.ok) {
         throw new Error(result.error ?? "Referral jalur gagal diterbitkan.");
       }
-      setSuccess("Referral jalur berhasil diterbitkan.");
+      setSuccess("Jalur berhasil difinalisasi dan masuk antrian rujukan.");
       window.location.reload();
     } catch (submissionError) {
       setError(
@@ -144,24 +144,13 @@ export function PathReferralForm({
         </select>
       </label>
 
-      <label>
-        <span>Catatan Referral</span>
-        <textarea
-          name="referralNote"
-          maxLength={3000}
-          rows={5}
-          disabled={busy}
-          placeholder="Tuliskan instruksi yang memang perlu diteruskan ke OPD tujuan."
-        />
-      </label>
-
       <div className={styles.formFeedback} aria-live="polite">
         {error && <p role="alert" className={styles.error}>{error}</p>}
         {success && <p role="status" className={styles.success}>{success}</p>}
       </div>
 
       <button type="submit" disabled={busy || !targetOpdId} aria-busy={busy}>
-        {busy ? "Menerbitkan…" : "Terbitkan Referral"}
+        {busy ? "Memfinalisasi…" : "Finalisasi Jalur"}
       </button>
     </form>
   );

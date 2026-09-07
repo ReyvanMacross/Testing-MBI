@@ -150,10 +150,10 @@ try {
   assert.equal(normalDecision.data.decision_status, "FINAL");
   assert.equal(normalDecision.data.decision_source, "ASSESSMENT_REVIEW");
   assert.equal(normalDecision.data.output_jalur, "WIRAUSAHA");
-  assert.equal(normalReferral.data.status, "TERKIRIM");
+  assert.equal(normalReferral.data.status, "MENUNGGU_RUJUKAN");
   assert.match(normalReferral.data.referral_code, /^REF-\d{4}-\d{6}$/);
-  assert.ok(normalReferral.data.sent_at);
-  assert.equal(normalCase.data.current_stage, "REFERRAL_TERKIRIM");
+  assert.equal(normalReferral.data.sent_at, null);
+  assert.equal(normalCase.data.current_stage, "MENUNGGU_RUJUKAN");
   assert.equal(normalOverrides.count, 0);
 
   const duplicate = await publish(fixture.wirausaha.caseId, cookie, {
@@ -319,7 +319,7 @@ try {
         decisionFinal: "PASS",
         referralCreated: "PASS",
         referralCode: "PASS",
-        caseStage: "REFERRAL_TERKIRIM",
+        caseStage: "MENUNGGU_RUJUKAN",
         duplicatePublish: 409,
         wrongTargetPolicy: 400,
         overrideWithoutCapability: 403,

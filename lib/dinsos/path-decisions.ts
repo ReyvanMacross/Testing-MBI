@@ -22,7 +22,7 @@ export type PublishedPathReferral = {
   targetOpdId: string;
   targetOpdName: string;
   instruction: string | null;
-  sentAt: string;
+  sentAt: string | null;
   pathDecisionId: string;
   decisionSource: "ASSESSMENT_REVIEW" | "MANUAL_OVERRIDE" | "LEGACY";
 };
@@ -84,7 +84,7 @@ export async function getPublishedReferral(
     .limit(1)
     .maybeSingle();
   if (error) throw new Error("Gagal mengambil referral jalur.");
-  if (!referral || !referral.jalur || !referral.sent_at) return null;
+  if (!referral || !referral.jalur) return null;
 
   const [opdResult, decisionResult] = await Promise.all([
     admin

@@ -91,6 +91,19 @@
   background: #ffffff;
 }
 
+.trackingLink {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  padding: 10px 16px;
+  border-radius: 4px;
+  background: #064597;
+  color: #ffffff;
+  text-decoration: none;
+}
+
 .eyebrow,
 .formEyebrow,
 .published header p {

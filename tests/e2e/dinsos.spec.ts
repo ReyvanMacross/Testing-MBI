@@ -201,6 +201,9 @@ test.describe.serial("Dinas Sosial split path", () => {
   let pathFixture: PathFixtureState;
 
   test.beforeAll(() => {
+    execFileSync(process.execPath, ["scripts/dev/seed-dinsos-program-fixtures.mjs"], {
+      cwd: process.cwd(), env: process.env, stdio: "pipe",
+    });
     execFileSync(process.execPath, ["scripts/dev/seed-dinsos-path-fixtures.mjs"], {
       cwd: process.cwd(), env: process.env, stdio: "pipe",
     });
@@ -211,6 +214,9 @@ test.describe.serial("Dinas Sosial split path", () => {
 
   test.afterAll(() => {
     execFileSync(process.execPath, ["scripts/dev/cleanup-dinsos-path-fixtures.mjs"], {
+      cwd: process.cwd(), env: process.env, stdio: "pipe",
+    });
+    execFileSync(process.execPath, ["scripts/dev/cleanup-dinsos-program-fixtures.mjs"], {
       cwd: process.cwd(), env: process.env, stdio: "pipe",
     });
   });
@@ -235,9 +241,6 @@ test.describe.serial("Dinas Sosial split path", () => {
     await expect(page.getByLabel("Ditujukan ke OPD *")).toHaveValue(
       pathFixture.wirausaha.targetOpdId,
     );
-    await page.getByLabel("Catatan Referral").fill(
-      "Instruksi E2E untuk OPD tujuan tanpa data pribadi warga.",
-    );
     await page.screenshot({
       path: path.join(artifactDir, "17-split-jalur-desktop.png"),
       fullPage: true,
@@ -260,12 +263,12 @@ test.describe.serial("Dinas Sosial split path", () => {
         response.url().includes(`/api/dinsos/cases/${pathFixture.wirausaha.caseId}/path/publish`) &&
         response.request().method() === "POST",
     );
-    await page.getByRole("button", { name: "Terbitkan Referral" }).click();
+    await page.getByRole("button", { name: "Finalisasi Jalur" }).click();
     expect((await publishResponse).status()).toBe(201);
-    await expect(page.getByRole("heading", { name: "Referral Terkirim" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Menunggu Rujukan" })).toBeVisible();
     await expect(page.getByText(/REF-\d{4}-\d{6}/)).toBeVisible();
     await page.screenshot({
-      path: path.join(artifactDir, "19-referral-terkirim-desktop.png"),
+      path: path.join(artifactDir, "19-referral-menunggu-desktop.png"),
       fullPage: true,
     });
 
@@ -276,9 +279,35 @@ test.describe.serial("Dinas Sosial split path", () => {
       ),
     ).toBeLessThanOrEqual(1);
     await page.screenshot({
-      path: path.join(artifactDir, "20-referral-terkirim-mobile.png"),
+      path: path.join(artifactDir, "20-referral-menunggu-mobile.png"),
       fullPage: true,
     });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.getByRole("link", { name: "Proses Rujukan" }).click();
+    await expect(page.getByRole("heading", { name: "Split Jalur & Referral" })).toBeVisible();
+    const processDialog = page.getByRole("dialog", { name: /REF-\d{4}-\d{6}/ });
+    await expect(processDialog).toBeVisible();
+    await processDialog.getByLabel("Program Intervensi Spesifik *").selectOption({ label: "DEV Pendampingan Modal UMKM" });
+    await processDialog.getByLabel("Catatan Instruksi untuk OPD").fill("Instruksi E2E minimal tanpa data pribadi warga.");
+    await page.screenshot({ path: path.join(artifactDir, "21-proses-rujukan-desktop.png"), fullPage: true });
+    const sendResponse = page.waitForResponse((response) => response.url().includes("/api/dinsos/referrals/") && response.url().endsWith("/send") && response.request().method() === "POST");
+    await processDialog.getByRole("button", { name: "Kirim Rujukan ke OPD" }).click();
+    expect((await sendResponse).status()).toBe(200);
+    const progressDialog = page.getByRole("dialog", { name: /REF-\d{4}-\d{6}/ });
+    await expect(progressDialog.getByText("TERKIRIM", { exact: true })).toBeVisible();
+    await expect(progressDialog.getByText("Asesmen Lapangan Selesai")).toBeVisible();
+    await expect(progressDialog.getByText("Disetujui & Diterbitkan Jalur")).toBeVisible();
+    await expect(progressDialog.getByText(/Rujukan Dikirim ke/)).toBeVisible();
+    const printHref = await progressDialog.getByRole("link", { name: "Cetak Surat Rujukan" }).getAttribute("href");
+    expect(printHref).toBeTruthy();
+    const printResponse = await page.request.get(printHref!);
+    expect(printResponse.status()).toBe(200);
+    await page.screenshot({ path: path.join(artifactDir, "22-progress-referral-desktop.png"), fullPage: true });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: path.join(artifactDir, "23-progress-referral-mobile.png"), fullPage: true });
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SECRET_KEY) {
       const admin = createClient(
@@ -295,6 +324,7 @@ test.describe.serial("Dinas Sosial split path", () => {
       expect(result.data?.current_stage).toBe("REFERRAL_TERKIRIM");
     }
 
+    await page.getByRole("link", { name: "Tutup pelacakan referral" }).click();
     await page.getByRole("button", { name: "Keluar" }).click();
     await expect(page).toHaveURL(/\/login$/);
   });

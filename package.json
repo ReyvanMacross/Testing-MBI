@@ -33,6 +33,11 @@
     "dev:seed-dinsos-paths": "node scripts/dev/seed-dinsos-path-fixtures.mjs",
     "dev:cleanup-dinsos-paths": "node scripts/dev/cleanup-dinsos-path-fixtures.mjs",
     "test:dinsos-paths": "node scripts/test-dinsos-paths.mjs",
+    "dev:seed-dinsos-programs": "node scripts/dev/seed-dinsos-program-fixtures.mjs",
+    "dev:cleanup-dinsos-programs": "node scripts/dev/cleanup-dinsos-program-fixtures.mjs",
+    "dev:seed-dinsos-referrals": "node scripts/dev/seed-dinsos-referral-fixtures.mjs",
+    "dev:cleanup-dinsos-referrals": "node scripts/dev/cleanup-dinsos-referral-fixtures.mjs",
+    "test:dinsos-referrals": "node scripts/test-dinsos-referrals.mjs",
     "test:e2e": "playwright test",
     "verify:diskominfo": "npm run test:desil-map && npm run test:activity-logs && npm run test:integrations && npm run audit:readiness && npm run lint && npm run build"
   },

@@ -35,6 +35,8 @@ const sensitiveTables = [
   "dinsos_assessment_reviews",
   "dinsos_path_overrides",
   "penentuan_jalur",
+  "master_program_layanan",
+  "referral_mbi_events",
 ];
 const adminRpcs = [
   "list_managed_users",
@@ -49,6 +51,10 @@ const adminRpcs = [
   "dinsos_review_assessment",
   "dinsos_target_opd_allowed",
   "dinsos_publish_path_referral",
+  "dinsos_referral_summary",
+  "list_dinsos_referrals",
+  "dinsos_send_referral",
+  "transition_referral_status",
 ];
 const migrationAdminRpcs = ["dinsos_warga_summary", "list_dinsos_warga"];
 const rpcBodies = {
@@ -66,6 +72,16 @@ const rpcBodies = {
     p_actor_id: "00000000-0000-4000-8000-000000000002",
     p_path: "PEKERJA",
     p_target_opd_id: "00000000-0000-4000-8000-000000000003",
+  },
+  dinsos_send_referral: {
+    p_referral_id: "00000000-0000-4000-8000-000000000001",
+    p_actor_id: "00000000-0000-4000-8000-000000000002",
+    p_program_id: "00000000-0000-4000-8000-000000000003",
+    p_referral_date: "2026-09-07",
+  },
+  transition_referral_status: {
+    p_referral_id: "00000000-0000-4000-8000-000000000001",
+    p_to_status: "DITERIMA",
   },
 };
 
@@ -275,6 +291,7 @@ const mutationRoutes = [
   "app/api/dinsos/assessments/route.ts",
   "app/api/dinsos/assessments/[assessmentId]/review/route.ts",
   "app/api/dinsos/cases/[caseId]/path/publish/route.ts",
+  "app/api/dinsos/referrals/[referralId]/send/route.ts",
 ];
 for (const route of mutationRoutes) {
   const source = await readFile(path.join(PROJECT_ROOT, route), "utf8");
