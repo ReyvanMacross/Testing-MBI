@@ -78,12 +78,12 @@
 .mapViewport,
 .drilldownViewport {
   min-width: 0;
-  min-height: 460px;
+  min-height: 570px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  background: #f8f8f8;
+  padding: 24px 28px;
+  background: radial-gradient(circle at 50% 44%, #ffffff 0, #f8fafc 72%);
 }
 
 .sidePanel,
@@ -100,6 +100,73 @@
   gap: 16px;
   padding: 0 12px 0 20px;
   border-bottom: 1px solid #e2e5e9;
+}
+
+.districtSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e2e5e9;
+  background: #fbfcfe;
+}
+
+.districtSummary h2,
+.districtSummary p,
+.districtSummary dl,
+.districtSummary dd {
+  margin: 0;
+}
+
+.districtSummary h2 {
+  margin-top: 2px;
+  color: #172033;
+  font-size: 21px;
+  line-height: 28px;
+}
+
+.districtSummary p {
+  margin-top: 2px;
+  color: #737b88;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.summaryEyebrow {
+  color: #1c5ca9;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  line-height: 15px;
+  text-transform: uppercase;
+}
+
+.districtSummary dl {
+  display: flex;
+  gap: 10px;
+}
+
+.districtSummary dl > div {
+  min-width: 112px;
+  padding: 10px 12px;
+  border: 1px solid #e1e7ef;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.districtSummary dt {
+  color: #77808d;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.districtSummary dd {
+  margin-top: 2px;
+  color: #172033;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 24px;
 }
 
 .breadcrumb {
@@ -156,7 +223,7 @@
 
   .mapViewport,
   .drilldownViewport {
-    min-height: 380px;
+    min-height: 440px;
   }
 
   .sidePanel,
@@ -174,8 +241,24 @@
 
   .mapViewport,
   .drilldownViewport {
-    min-height: 300px;
+    min-height: 360px;
     padding: 16px;
+  }
+
+  .districtSummary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .districtSummary dl {
+    width: 100%;
+  }
+
+  .districtSummary dl > div {
+    min-width: 0;
+    flex: 1 1 0;
   }
 
   .sidePanel,

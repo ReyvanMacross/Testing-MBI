@@ -58,6 +58,27 @@ test("Frozen MVP routes do not overflow a 390px viewport", async ({ page }) => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow, `${url} has horizontal overflow`).toBeLessThanOrEqual(1);
+
+    if (url === "/diskominfo/peta") {
+      const labels = page.locator("[data-label-kecamatan]");
+      await expect(labels).toHaveCount(30);
+
+      const visibleLabels = await labels.evaluateAll((items) =>
+        items.filter((item) => {
+          const style = getComputedStyle(item);
+          const bounds = item.getBoundingClientRect();
+
+          return (
+            style.display !== "none" &&
+            style.visibility !== "hidden" &&
+            bounds.width > 2 &&
+            bounds.height > 2
+          );
+        }).length,
+      );
+
+      expect(visibleLabels, "Semua label kecamatan harus terlihat di mobile").toBe(30);
+    }
   }
 
   await page.getByRole("button", { name: "Keluar" }).click();
