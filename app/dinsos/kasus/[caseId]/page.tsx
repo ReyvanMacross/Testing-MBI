@@ -1,4 +1,4 @@
-import { ArrowLeft, ChartNoAxesColumnIncreasing, FolderOpen, House, IdCard, ShieldAlert } from "lucide-react";
+import { ArrowLeft, BadgeCheck, ChartNoAxesColumnIncreasing, House, IdCard, ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -22,8 +22,7 @@ export default async function CaseDataPage({ params }: { params: Promise<{ caseI
   const documents = [
     ["ktp", "Foto KTP", item.verification?.documents.ktp],
     ["kk", "Foto Kartu Keluarga", item.verification?.documents.kk],
-    ["rumah", "Kondisi Rumah", item.verification?.documents.rumah],
-    ["kondisi-rumah", "Bukti Lapangan", item.verification?.documents.kondisiRumah],
+    ["rumah", "Kondisi Rumah (Fasad Depan)", item.verification?.documents.rumah],
   ] as const;
 
   return (
@@ -34,7 +33,6 @@ export default async function CaseDataPage({ params }: { params: Promise<{ caseI
       </div>
       <RingkasanKasus item={item} />
       <TabTahapanKasus caseId={caseId} active="data" assessmentReady={assessmentReady} resultReady={resultReady} />
-      {!item.locationResolved && <p className={styles.warning}><ShieldAlert size={14} /> Wilayah belum terhubung ke master wilayah.</p>}
 
       <div className={styles.infoGrid}>
         <article className={styles.card}>
@@ -65,25 +63,32 @@ export default async function CaseDataPage({ params }: { params: Promise<{ caseI
           <div className={styles.socialFields}>
             <div><span className={styles.label}>Pendidikan Terakhir</span><p className={styles.value}>{item.warga.pendidikan ?? "—"}</p></div>
             <div><span className={styles.label}>Pekerjaan Utama</span><p className={styles.value}>{item.warga.pekerjaan ?? "—"}</p></div>
-            <div><span className={styles.label}>Jumlah Anggota KK</span><p className={styles.value}>{item.warga.jumlahAnggotaKk ?? "—"}</p></div>
+            <div><span className={styles.label}>Jumlah Tanggungan</span><p className={styles.value}>{item.warga.jumlahAnggotaKk ?? "—"}</p></div>
             <div><span className={styles.label}>Status Kepemilikan Rumah</span><p className={styles.value}>{item.warga.statusRumah ?? "—"}</p></div>
           </div>
         </article>
       </div>
 
       <article className={`${styles.card} ${styles.documents}`}>
-        <h2><FolderOpen size={17} /> Dokumen Pendukung (Bukti Lapangan)</h2>
+        <h2><ImageIcon size={18} /> Dokumen Pendukung (Bukti Lapangan)</h2>
         <div className={styles.documentList}>
           {documents.map(([type, label, available]) => (
             <div className={styles.document} key={type}>
-              <span className={styles.documentPreview}><FolderOpen size={24} /></span>
+              <span className={styles.documentPreview}><ImageIcon size={44} strokeWidth={1.25} /></span>
               <strong>{label}</strong>
               <p>{available ? <a href={`/api/dinsos/cases/${caseId}/documents/${type}`} target="_blank">Lihat dokumen</a> : "Dokumen belum tersedia"}</p>
             </div>
           ))}
         </div>
-        {item.verification && <p className={styles.verifyFooter}>Diverifikasi oleh <strong>{item.verification.petugas ?? "—"}</strong> pada {displayDate(item.verification.tanggal)}</p>}
       </article>
+
+      {item.verification && (
+        <p className={styles.verifyFooter}>
+          <BadgeCheck size={16} aria-hidden="true" />
+          Diverifikasi oleh <strong>{item.verification.petugas ?? "—"}</strong>
+          <span>(Petugas Kelurahan)</span> pada <strong>{displayDate(item.verification.tanggal)}</strong>
+        </p>
+      )}
     </section>
   );
 }

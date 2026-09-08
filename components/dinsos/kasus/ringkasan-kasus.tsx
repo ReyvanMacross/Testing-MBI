@@ -1,4 +1,4 @@
-import { MapPin, UserRound } from "lucide-react";
+import { MapPin, ShieldAlert, UserRound } from "lucide-react";
 
 import type { DinsosCaseDetail } from "@/lib/dinsos/cases";
 import { stageLabel } from "@/lib/dinsos/case-stage";
@@ -12,7 +12,21 @@ export function RingkasanKasus({ item, ringkas = false }: { item: DinsosCaseDeta
       <div className={styles.heroContent}>
         <h1>{item.warga.nama}</h1>
         <p>NIK: <code>{item.warga.maskedNik}</code>{ringkas ? ` • Kec. ${item.warga.kecamatan ?? "—"}, Kel. ${item.warga.kelurahan ?? "—"}` : ""}</p>
-        {!ringkas && <p className={styles.location}><MapPin size={13} aria-hidden="true" /> Kel. {item.warga.kelurahan ?? "—"}<span>•</span>Kec. {item.warga.kecamatan ?? "—"}</p>}
+        {!ringkas && (
+          <p className={styles.location}>
+            <MapPin size={15} aria-hidden="true" /> Kel. {item.warga.kelurahan ?? "—"}
+            <span>•</span>Kec. {item.warga.kecamatan ?? "—"}
+            {!item.locationResolved && (
+              <span
+                className={styles.locationWarning}
+                title="Wilayah belum terhubung ke master wilayah"
+                aria-label="Wilayah belum terhubung ke master wilayah"
+              >
+                <ShieldAlert size={14} />
+              </span>
+            )}
+          </p>
+        )}
       </div>
       <div className={styles.badges}>
         <span className={styles.stageBadge}>{stageLabel(item.currentStage)}</span>
