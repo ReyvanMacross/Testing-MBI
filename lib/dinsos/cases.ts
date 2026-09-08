@@ -25,6 +25,8 @@ export type DinsosQueueItem = {
   currentStage: string;
   priority: string;
   queueEnteredAt: string;
+  jenisKelamin: string | null;
+  hasPhoto: boolean;
 };
 
 export type DinsosCaseDetail = {
@@ -90,6 +92,31 @@ export async function getDinsosCases(filters: DinsosCaseFilters = {}) {
   if (error) throw new Error("Gagal mengambil antrian kasus Dinsos.");
   const rows = data ?? [];
   const total = Number(rows[0]?.total_count ?? 0);
+  const wargaIds = Array.from(new Set(rows.map((row: Record<string, unknown>) => String(row.warga_id))));
+  const jenisKelamin = new Map<string, string | null>();
+  const fotoTerbaru = new Map<string, boolean>();
+  if (wargaIds.length) {
+    const [wargaResult, fotoResult] = await Promise.all([
+      admin.from("warga").select("id,jenis_kelamin").in("id", wargaIds),
+      admin
+        .from("verifikasi_validasi")
+        .select("id,warga_id,foto_ktp_url,created_at")
+        .in("warga_id", wargaIds)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false }),
+    ]);
+    if (wargaResult.error || fotoResult.error) {
+      throw new Error("Gagal mengambil foto antrian Dinsos.");
+    }
+    for (const warga of wargaResult.data ?? []) {
+      jenisKelamin.set(warga.id, warga.jenis_kelamin);
+    }
+    for (const foto of fotoResult.data ?? []) {
+      if (!fotoTerbaru.has(foto.warga_id)) {
+        fotoTerbaru.set(foto.warga_id, Boolean(foto.foto_ktp_url));
+      }
+    }
+  }
   return {
     cases: rows.map((row: Record<string, unknown>) => ({
       caseId: String(row.case_id), wargaId: String(row.warga_id),
@@ -98,6 +125,8 @@ export async function getDinsosCases(filters: DinsosCaseFilters = {}) {
       kecamatan: row.kecamatan ? String(row.kecamatan) : null,
       locationResolved: Boolean(row.location_resolved), currentStage: String(row.current_stage),
       priority: String(row.priority), queueEnteredAt: String(row.queue_entered_at),
+      jenisKelamin: jenisKelamin.get(String(row.warga_id)) ?? null,
+      hasPhoto: fotoTerbaru.get(String(row.warga_id)) ?? false,
     })) as DinsosQueueItem[],
     page, pageSize: DINSOS_CASE_PAGE_SIZE, total,
     totalPages: Math.max(1, Math.ceil(total / DINSOS_CASE_PAGE_SIZE)),

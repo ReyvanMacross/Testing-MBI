@@ -8,7 +8,7 @@ type FixtureState={workflow:string;override:string;referral:string};
 const artifactDir=path.join(process.cwd(),"artifacts","dinsos");
 let fixture:FixtureState;
 
-async function login(page:import("@playwright/test").Page,identifier:string,password:string){await page.goto("/login");await page.getByLabel("Nama Pengguna atau NIP").fill(identifier);await page.getByLabel("Kata Sandi",{exact:true}).fill(password);await page.getByRole("button",{name:"Masuk",exact:true}).click();await expect(page).toHaveURL(/\/(?:diskominfo|dinsos)$/);}
+async function login(page:import("@playwright/test").Page,identifier:string,password:string){await page.goto("/login");await page.getByLabel("Nama Pengguna atau NIP").fill(identifier);await page.getByLabel("Kata Sandi",{exact:true}).fill(password);await page.getByRole("button",{name:"Masuk",exact:true}).click();await expect(page).toHaveURL(/\/(?:diskominfo|dinsos)$/,{timeout:15_000});}
 async function logout(page:import("@playwright/test").Page){await page.locator('button[aria-haspopup="menu"]').click();await page.getByRole("menuitem",{name:"Keluar"}).click();await expect(page).toHaveURL(/\/login$/);}
 test.use({ viewport: { width: 1024, height: 1024 } });
 

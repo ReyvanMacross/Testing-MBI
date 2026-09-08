@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { GambarTerlindungi } from "@/components/dinsos/kasus/gambar-terlindungi";
 import { JudulHalaman } from "@/components/dinsos/shared/judul-halaman";
 import { KartuRingkasan } from "@/components/dinsos/shared/kartu-ringkasan";
 import { DINSOS_STAGES, stageLabel } from "@/lib/dinsos/case-stage";
@@ -50,6 +51,11 @@ const formatDate = (value: string) =>
     month: "short",
     year: "numeric",
   }).format(new Date(value));
+
+const fotoPengganti = (jenisKelamin: string | null) =>
+  jenisKelamin?.toLocaleLowerCase("id-ID").includes("perempuan")
+    ? "/images/dinsos/profil-warga-perempuan.jpg"
+    : "/images/dinsos/profil-warga-laki-laki.jpg";
 
 export default async function DinsosQueuePage({ searchParams }: Props) {
   const params = await searchParams;
@@ -137,7 +143,7 @@ export default async function DinsosQueuePage({ searchParams }: Props) {
                 <tbody>{result.cases.map((item) => (
                   <tr key={item.caseId}>
                     <td>{item.maskedNik}</td>
-                    <td><strong>{item.nama}</strong></td>
+                    <td><div className={styles.personCell}><GambarTerlindungi tersedia={item.hasPhoto} src={`/api/dinsos/cases/${item.caseId}/documents/ktp`} fallbackSrc={fotoPengganti(item.jenisKelamin)} alt={`Foto ${item.nama}`} jenis="profil" /><strong>{item.nama}</strong></div></td>
                     <td>{item.kelurahan ?? "—"}{!item.locationResolved && <span className={styles.unresolved} title="Belum terhubung master wilayah">!</span>}</td>
                     <td><span className={styles.stage}>{stageLabel(item.currentStage)}</span></td>
                     <td><span className={`${styles.priority} ${styles[item.priority.toLowerCase()]}`}>{item.priority}</span></td>
@@ -150,7 +156,7 @@ export default async function DinsosQueuePage({ searchParams }: Props) {
             <div className={styles.mobile}>
               {result.cases.map((item) => (
                 <article key={item.caseId}>
-                  <header><div><h3>{item.nama}</h3><p>{item.maskedNik}</p></div><span className={`${styles.priority} ${styles[item.priority.toLowerCase()]}`}>{item.priority}</span></header>
+                  <header><div className={styles.mobilePerson}><GambarTerlindungi tersedia={item.hasPhoto} src={`/api/dinsos/cases/${item.caseId}/documents/ktp`} fallbackSrc={fotoPengganti(item.jenisKelamin)} alt={`Foto ${item.nama}`} jenis="profil" /><div><h3>{item.nama}</h3><p>{item.maskedNik}</p></div></div><span className={`${styles.priority} ${styles[item.priority.toLowerCase()]}`}>{item.priority}</span></header>
                   <dl>
                     <div><dt>Kelurahan</dt><dd>{item.kelurahan ?? "—"}</dd></div>
                     <div><dt>Tahap</dt><dd>{stageLabel(item.currentStage)}</dd></div>

@@ -46,7 +46,7 @@ export type WargaCreateInput = {
   jenisKelamin: "Laki-laki" | "Perempuan";
   statusPerkawinan: string;
   nomorHp: string;
-  email: string | null;
+  email: string;
   alamatLengkap: string;
   kelurahanId: string;
   pendidikanTerakhir: string;
@@ -167,15 +167,19 @@ export function parseWargaCreateInput(value: unknown): WargaCreateInput {
     throw new ApiError("Jenis kelamin tidak valid.", 400);
   }
 
-  const email = optionalText(input.email, "Email", 254);
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new ApiError("Format email tidak valid.", 400);
+  const email = requiredText(input.email, "Email", 254).toLocaleLowerCase("id-ID");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new ApiError("Email wajib memakai format yang benar, misalnya nama@example.invalid.", 400);
   }
 
-  const nomorHp = requiredText(input.nomorHp, "Nomor telepon", 25);
-  if (!/^[+()\d\s-]{8,25}$/.test(nomorHp)) {
-    throw new ApiError("Nomor telepon tidak valid.", 400);
+  const nomorHpMentah = requiredText(input.nomorHp, "Nomor telepon", 25);
+  let angkaTelepon = nomorHpMentah.replace(/\D/g, "");
+  if (angkaTelepon.startsWith("62")) angkaTelepon = angkaTelepon.slice(2);
+  if (angkaTelepon.startsWith("0")) angkaTelepon = angkaTelepon.slice(1);
+  if (!/^8\d{7,12}$/.test(angkaTelepon)) {
+    throw new ApiError("Nomor telepon harus diawali +628 dan berisi 8–13 digit setelah +62.", 400);
   }
+  const nomorHp = `+62${angkaTelepon}`;
 
   const jumlahAnggotaKk = Number(input.jumlahAnggotaKk);
   if (!Number.isInteger(jumlahAnggotaKk) || jumlahAnggotaKk < 1 || jumlahAnggotaKk > 50) {

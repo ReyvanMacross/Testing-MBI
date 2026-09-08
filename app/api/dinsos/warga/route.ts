@@ -86,16 +86,41 @@ export async function POST(request: Request) {
       throw createError;
     }
 
+    const { data: dinsosCase, error: caseError } = await admin
+      .from("dinsos_cases")
+      .insert({
+        warga_id: created.id,
+        current_stage: "MENUNGGU_ASESMEN",
+        priority: "SEDANG",
+        assigned_to: actor.profileId,
+      })
+      .select("id")
+      .single();
+    if (caseError || !dinsosCase) {
+      const cleanup = await admin.from("warga").delete().eq("id", created.id);
+      if (cleanup.error) {
+        throw new ApiError("Pendaftaran gagal dan data sementara tidak dapat dibersihkan.", 500);
+      }
+      throw caseError ?? new ApiError("Antrian warga tidak dapat dibuat.", 500);
+    }
+
     await writeActivityLog({
       userId: actor.profileId,
       namaPengguna: actor.namaLengkap,
       rolePengguna: actor.role,
       aktivitas: "Mendaftarkan warga baru",
       modul: "Dinas Sosial",
-      metadata: { wargaId: created.id, source: "DINSOS_PORTAL" },
+      metadata: {
+        wargaId: created.id,
+        caseId: dinsosCase.id,
+        source: "DINSOS_PORTAL",
+      },
     });
 
-    return NextResponse.json({ ok: true, wargaId: created.id }, { status: 201 });
+    return NextResponse.json(
+      { ok: true, wargaId: created.id, caseId: dinsosCase.id },
+      { status: 201 },
+    );
   } catch (error) {
     return apiErrorResponse(
       error,
