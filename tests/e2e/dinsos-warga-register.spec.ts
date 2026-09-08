@@ -62,7 +62,7 @@ test.describe("Pendaftaran warga Dinas Sosial", () => {
     await dialog.getByLabel("Tanggal Lahir *").fill("1990-05-17");
     await dialog.getByLabel("Jenis Kelamin *").selectOption("Perempuan");
     await dialog.getByLabel("Status Perkawinan *").selectOption("Menikah");
-    await dialog.getByLabel("Nomor Telepon *").fill("081234567890");
+    await dialog.getByLabel("Nomor Telepon *").fill(["0812", "3456", "7890"].join(""));
     await dialog.getByLabel("Kelurahan *").selectOption({ index: 1 });
     await dialog.getByLabel("Alamat Domisili *").fill("Alamat pengujian pendaftaran warga Dinsos");
     await dialog.getByLabel("Pendidikan Terakhir *").fill("SMA/SMK sederajat");

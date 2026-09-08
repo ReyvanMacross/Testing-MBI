@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useFokusDialog } from "@/components/dinsos/shared/use-fokus-dialog";
 import type { ReferralDetail } from "@/lib/dinsos/referrals";
 import { dinsosPathLabel } from "@/lib/dinsos/path-values";
 
@@ -23,6 +24,7 @@ export function ProcessReferralDialog({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const dialogRef = useFokusDialog<HTMLElement>();
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !busy) router.push(closeHref);
@@ -57,7 +59,7 @@ export function ProcessReferralDialog({
   return (
     <div className={`${styles.overlay} ${styles.centered}`}>
       <button className={styles.backdrop} type="button" aria-label="Tutup proses rujukan" onClick={() => !busy && router.push(closeHref)} />
-      <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="process-referral-title">
+      <section ref={dialogRef} tabIndex={-1} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="process-referral-title">
         <header className={styles.dialogHeader}>
           <h2 id="process-referral-title">Proses Rujukan Warga — {referral.referralCode}</h2>
           <Link href={closeHref} aria-label="Tutup proses rujukan">×</Link>

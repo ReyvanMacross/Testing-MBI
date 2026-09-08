@@ -16,9 +16,37 @@ export async function saveAssessment(caseId: string, actor: DinsosActor, values:
     pkh_snapshot: official?.status_pkh ?? null, bpnt_snapshot: official?.status_sembako_bpnt ?? null,
     ...values,
   };
-  const { data, error } = await admin.from("dinsos_asesmen_sosial").upsert(payload, { onConflict: "case_id" }).select("id").single();
-  if (error) throw new ApiError("Asesmen tidak dapat disimpan.", 400);
-  return data;
+  const existing = await admin
+    .from("dinsos_asesmen_sosial")
+    .select("id,status")
+    .eq("case_id", caseId)
+    .maybeSingle();
+  if (existing.error) throw new ApiError("Asesmen tidak dapat disimpan.", 400);
+  if (existing.data?.status !== undefined) {
+    if (existing.data.status !== "DRAFT") {
+      throw new ApiError("Asesmen yang sudah selesai tidak dapat diubah.", 409);
+    }
+    const updated = await admin
+      .from("dinsos_asesmen_sosial")
+      .update(payload)
+      .eq("id", existing.data.id)
+      .eq("status", "DRAFT")
+      .select("id")
+      .maybeSingle();
+    if (updated.error) throw new ApiError("Asesmen tidak dapat disimpan.", 400);
+    if (!updated.data) throw new ApiError("Asesmen yang sudah selesai tidak dapat diubah.", 409);
+    return updated.data;
+  }
+  const inserted = await admin
+    .from("dinsos_asesmen_sosial")
+    .insert(payload)
+    .select("id")
+    .single();
+  if (inserted.error?.code === "23505") {
+    throw new ApiError("Asesmen sedang diproses oleh permintaan lain.", 409);
+  }
+  if (inserted.error) throw new ApiError("Asesmen tidak dapat disimpan.", 400);
+  return inserted.data;
 }
 
 export function mapDinsosRpcError(error: { message?: string; code?: string } | null) {

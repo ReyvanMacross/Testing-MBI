@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useFokusDialog } from "@/components/dinsos/shared/use-fokus-dialog";
 import type { AssessmentDetail } from "@/lib/dinsos/assessments";
 import type { DinsosPath } from "@/lib/dinsos/path-values";
 
@@ -32,6 +33,7 @@ export function AssessmentReviewDrawer({
   const [selectedPath, setSelectedPath] = useState<DinsosPath | "">(
     assessment.fieldRecommendation ?? "",
   );
+  const dialogRef = useFokusDialog<HTMLElement>();
   const allowedOpds = opds.filter(
     (opd) => selectedPath && opd.allowedPaths.includes(selectedPath),
   );
@@ -97,6 +99,8 @@ export function AssessmentReviewDrawer({
         onClick={() => !busy && router.push(detailHref)}
       />
       <aside
+        ref={dialogRef}
+        tabIndex={-1}
         className={`${styles.drawer} ${styles.reviewDrawer}`}
         role="dialog"
         aria-modal="true"

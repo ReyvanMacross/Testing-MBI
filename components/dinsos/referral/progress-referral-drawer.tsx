@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { useFokusDialog } from "@/components/dinsos/shared/use-fokus-dialog";
 import type { ReferralTimelineItem } from "@/lib/dinsos/referral-progress";
 import { dinsosPathLabel, type DinsosPath } from "@/lib/dinsos/path-values";
 
@@ -23,6 +24,7 @@ export function ReferralProgressDrawer({ progress, closeHref }: {
   closeHref: string;
 }) {
   const router = useRouter();
+  const dialogRef = useFokusDialog<HTMLElement>();
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") router.push(closeHref); };
     window.addEventListener("keydown", onKey);
@@ -31,7 +33,7 @@ export function ReferralProgressDrawer({ progress, closeHref }: {
   return (
     <div className={styles.overlay}>
       <button className={styles.backdrop} type="button" aria-label="Tutup pelacakan referral" onClick={() => router.push(closeHref)} />
-      <aside className={styles.drawer} role="dialog" aria-modal="true" aria-labelledby="progress-title">
+      <aside ref={dialogRef} tabIndex={-1} className={styles.drawer} role="dialog" aria-modal="true" aria-labelledby="progress-title">
         <header className={styles.dialogHeader}>
           <h2 id="progress-title">Lacak Progress Referral — {progress.referralCode}</h2>
           <Link href={closeHref} aria-label="Tutup pelacakan referral">×</Link>

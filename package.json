@@ -18,10 +18,13 @@
     "test:activity-logs": "node scripts/test-activity-logs.mjs",
     "test:integrations": "tsx scripts/test-integration-health.mjs",
     "test:hardening": "tsx scripts/test-diskominfo-hardening.mjs",
-    "test:migrations": "node scripts/check-migration-chain.mjs",
+    "test:migrations": "node scripts/test-migration-chain.mjs",
+    "test-migration-chain": "node scripts/test-migration-chain.mjs",
     "audit:readiness": "node scripts/audit-production-readiness.mjs",
+    "audit:dinsos-api-guards": "node scripts/audit-dinsos-api-guards.mjs",
     "check:prod-env": "node scripts/check-production-env.mjs",
     "scan:secrets": "node scripts/scan-tracked-secrets.mjs",
+    "scan:pii": "node scripts/audit-public-repo-pii.mjs",
     "onboard:dinsos": "node scripts/dev/onboard-dinsos-admin.mjs",
     "dev:seed-dinsos": "node scripts/dev/seed-dinsos-fixtures.mjs",
     "dev:cleanup-dinsos": "node scripts/dev/cleanup-dinsos-fixtures.mjs",
@@ -38,8 +41,10 @@
     "dev:seed-dinsos-referrals": "node scripts/dev/seed-dinsos-referral-fixtures.mjs",
     "dev:cleanup-dinsos-referrals": "node scripts/dev/cleanup-dinsos-referral-fixtures.mjs",
     "test:dinsos-referrals": "node scripts/test-dinsos-referrals.mjs",
+    "test:dinsos-concurrency": "node scripts/test-dinsos-concurrency.mjs",
     "test:e2e": "playwright test",
-    "verify:diskominfo": "npm run test:desil-map && npm run test:activity-logs && npm run test:integrations && npm run audit:readiness && npm run lint && npm run build"
+    "verify:diskominfo": "npm run test:desil-map && npm run test:activity-logs && npm run test:integrations && npm run audit:readiness && npm run lint && npm run build",
+    "verify:dinsos": "npm run test:dinsos && npm run test:dinsos-warga && npm run test:dinsos-assessments && npm run test:dinsos-paths && npm run test:dinsos-referrals && npm run test:dinsos-concurrency && npm run scan:pii && npm run audit:readiness && npm run lint && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",

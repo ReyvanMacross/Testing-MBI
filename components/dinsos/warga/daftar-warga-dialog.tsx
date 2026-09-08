@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
+import { useFokusDialog } from "@/components/dinsos/shared/use-fokus-dialog";
+
 import styles from "./edit-warga-dialog.module.css";
 
 type Props = {
@@ -19,6 +21,7 @@ export function DaftarWargaDialog({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const dialogRef = useFokusDialog<HTMLElement>('a[href*="mode=register"]');
 
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
@@ -88,6 +91,8 @@ export function DaftarWargaDialog({
         onClick={() => !busy && router.push(closeHref)}
       />
       <section
+        ref={dialogRef}
+        tabIndex={-1}
         className={`${styles.dialog} ${styles.registrationDialog}`}
         role="dialog"
         aria-modal="true"
