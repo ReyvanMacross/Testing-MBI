@@ -55,11 +55,11 @@ export function ProcessReferralDialog({
   }
 
   return (
-    <div className={styles.overlay}>
+    <div className={`${styles.overlay} ${styles.centered}`}>
       <button className={styles.backdrop} type="button" aria-label="Tutup proses rujukan" onClick={() => !busy && router.push(closeHref)} />
       <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="process-referral-title">
         <header className={styles.dialogHeader}>
-          <div><p>Proses Rujukan</p><h2 id="process-referral-title">{referral.referralCode}</h2></div>
+          <h2 id="process-referral-title">Proses Rujukan Warga — {referral.referralCode}</h2>
           <Link href={closeHref} aria-label="Tutup proses rujukan">×</Link>
         </header>
         <div className={styles.dialogContent}>

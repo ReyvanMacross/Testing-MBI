@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import type { WargaProfile } from "@/lib/dinsos/warga";
 
-import styles from "./warga-profile-drawer.module.css";
+import styles from "./profil-warga-drawer.module.css";
 
 type Props = {
   profile: WargaProfile;
@@ -61,7 +62,7 @@ export function WargaProfileDrawer({
       >
         <header className={styles.header}>
           <h2 id="warga-profile-title">Profil Warga — {profile.namaLengkap}</h2>
-          <Link href={closeHref} aria-label="Tutup profil warga" className={styles.close}>×</Link>
+          <Link href={closeHref} aria-label="Tutup profil warga" className={styles.close}><X size={19} /></Link>
         </header>
 
         <div className={styles.content}>
@@ -103,9 +104,6 @@ export function WargaProfileDrawer({
                 ))}
               </div>
             ) : <p className={styles.empty}>Belum ada riwayat asesmen.</p>}
-            <Link href={assessmentHref} className={styles.secondaryAction}>
-              Buat Asesmen Baru
-            </Link>
           </section>
 
           <section className={styles.section}>
@@ -125,6 +123,7 @@ export function WargaProfileDrawer({
 
         <footer className={styles.footer}>
           {canEdit ? <Link href={editHref} className={styles.edit}>Edit Data</Link> : <span className={styles.readOnly}>Data hanya dapat dilihat</span>}
+          <Link href={assessmentHref} className={styles.primaryAction}>Buat Asesmen Baru</Link>
         </footer>
       </aside>
     </div>

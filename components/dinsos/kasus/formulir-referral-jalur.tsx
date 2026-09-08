@@ -8,7 +8,7 @@ import {
   type DinsosPath,
 } from "@/lib/dinsos/path-values";
 
-import styles from "./referral.module.css";
+import styles from "./referral-kasus.module.css";
 
 type TargetOpd = {
   id: string;
@@ -150,7 +150,7 @@ export function PathReferralForm({
       </div>
 
       <button type="submit" disabled={busy || !targetOpdId} aria-busy={busy}>
-        {busy ? "Memfinalisasi…" : "Finalisasi Jalur"}
+        {busy ? "Memfinalisasi..." : "Finalisasi Jalur"}
       </button>
     </form>
   );

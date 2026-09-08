@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import type { WargaProfile } from "@/lib/dinsos/warga";
 
-import styles from "./create-assessment-dialog.module.css";
+import styles from "./buat-asesmen-dialog.module.css";
 
 type AssessmentType = {
   code: string;
@@ -145,7 +145,7 @@ export function CreateAssessmentDialog({
           <footer>
             <Link href={closeHref} aria-disabled={busy}>Batal</Link>
             <button type="submit" disabled={busy} aria-busy={busy}>
-              {busy ? "Menyimpan…" : "Simpan Asesmen"}
+              {busy ? "Menyimpan..." : "Simpan Asesmen"}
             </button>
           </footer>
         </form>

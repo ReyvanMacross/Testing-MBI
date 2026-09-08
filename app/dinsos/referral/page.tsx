@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { CheckCircle2, ChevronLeft, ChevronRight, Clock3, RefreshCcw, Search } from "lucide-react";
 import { redirect } from "next/navigation";
 
-import { ProcessReferralDialog } from "@/components/dinsos/process-referral-dialog";
-import { ReferralProgressDrawer } from "@/components/dinsos/referral-progress-drawer";
+import { ProcessReferralDialog } from "@/components/dinsos/referral/proses-referral-dialog";
+import { ReferralProgressDrawer } from "@/components/dinsos/referral/progress-referral-drawer";
+import { JudulHalaman } from "@/components/dinsos/shared/judul-halaman";
+import { KartuRingkasan } from "@/components/dinsos/shared/kartu-ringkasan";
 import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
 import { getReferralProgress } from "@/lib/dinsos/referral-progress";
 import {
@@ -65,17 +68,15 @@ export default async function DinsosReferralRegistry({ searchParams }: {
 
   return (
     <section aria-labelledby="referral-title">
-      <header className={styles.pageHeader}>
-        <div><h1 id="referral-title">Split Jalur &amp; Referral</h1><p>Pengalokasian warga terverifikasi ke program OPD dan pemantauan status rujukan.</p></div>
-      </header>
+      <JudulHalaman id="referral-title" title="Split Jalur & Referral" subtitle="Pengalokasian warga terverifikasi ke program OPD dan pemantauan status rujukan." />
       <div className={styles.summaryGrid}>
-        <article><p>Menunggu Rujukan</p><strong>{summary.waitingReferral.toLocaleString("id-ID")}</strong></article>
-        <article><p>Diproses OPD</p><strong>{summary.inOpdProcess.toLocaleString("id-ID")}</strong></article>
-        <article><p>Intervensi Selesai</p><strong>{summary.interventionCompleted.toLocaleString("id-ID")}</strong></article>
+        <KartuRingkasan label="Menunggu Rujukan" value={summary.waitingReferral} icon={Clock3} tone="amber" />
+        <KartuRingkasan label="Diproses OPD" value={summary.inOpdProcess} icon={RefreshCcw} />
+        <KartuRingkasan label="Intervensi Selesai" value={summary.interventionCompleted} icon={CheckCircle2} tone="green" />
       </div>
       <section className={styles.registryCard} aria-label="Daftar referral MBI">
         <form className={styles.filters} method="get">
-          <label className={styles.search}><span>Cari Referral</span><input type="search" name="q" maxLength={100} defaultValue={filters.search} placeholder="Cari NIK, Nama, ID Referral, atau OPD..." /></label>
+          <label className={styles.search}><span>Cari Referral</span><span className={styles.searchControl}><Search size={14} aria-hidden="true" /><input type="search" name="q" maxLength={100} defaultValue={filters.search} placeholder="Cari NIK, Nama, ID Referral, atau OPD..." /></span></label>
           <label><span>Jalur MBI</span><select name="path" defaultValue={filters.path ?? ""}><option value="">Semua Jalur</option>{DINSOS_PATHS.map((path) => <option key={path} value={path}>{dinsosPathLabel(path)}</option>)}</select></label>
           <label><span>Status</span><select name="status" defaultValue={filters.status ?? ""}><option value="">Semua Status</option>{REFERRAL_STATUSES.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}</select></label>
           <button type="submit">Filter</button>{activeFilters && <Link href="/dinsos/referral">Reset</Link>}
@@ -83,11 +84,11 @@ export default async function DinsosReferralRegistry({ searchParams }: {
         {result.referrals.length ? <>
           <div className={styles.desktopTable}><table><thead><tr><th scope="col">ID Referral</th><th scope="col">NIK &amp; Nama Warga</th><th scope="col">Jalur MBI</th><th scope="col">OPD Tujuan</th><th scope="col">Program Intervensi</th><th scope="col">Status</th><th scope="col">Aksi</th></tr></thead><tbody>{result.referrals.map((item) => {
             const action = referralAction(item.status); const mode = action === "PROCESS" ? "process" : "progress";
-            return <tr key={item.referralId}><td><strong>{item.referralCode}</strong></td><td><span>{item.nama}</span><code>{item.maskedNik}</code></td><td>{dinsosPathLabel(item.jalur)}</td><td>{item.targetOpd}</td><td>{item.program ?? "Belum ditentukan"}</td><td><span className={`${styles.badge} ${styles[item.status.toLowerCase()]}`}>{statusLabel(item.status)}</span></td><td><Link className={styles.action} href={href(filters, page, item.referralId, mode)}>{action === "PROCESS" ? "Proses Rujukan" : action === "PROGRESS" ? "Lacak Progress" : "Lihat Detail"}</Link></td></tr>;
+            return <tr key={item.referralId}><td><strong>{item.referralCode}</strong></td><td><span>{item.nama}</span><code>{item.maskedNik}</code></td><td><span className={styles.pathBadge}>{dinsosPathLabel(item.jalur)}</span></td><td>{item.targetOpd}</td><td>{item.program ?? "Belum ditentukan"}</td><td><span className={`${styles.badge} ${styles[item.status.toLowerCase()]}`}>{statusLabel(item.status)}</span></td><td><Link className={`${styles.action} ${action === "PROCESS" ? styles.primaryAction : ""}`} href={href(filters, page, item.referralId, mode)}>{action === "PROCESS" ? "Proses Rujukan" : action === "PROGRESS" ? "Lacak Progress" : "Lihat Detail"}</Link></td></tr>;
           })}</tbody></table></div>
           <div className={styles.mobileCards}>{result.referrals.map((item) => { const action = referralAction(item.status); const mode = action === "PROCESS" ? "process" : "progress"; return <article key={item.referralId}><header><strong>{item.referralCode}</strong><span className={`${styles.badge} ${styles[item.status.toLowerCase()]}`}>{statusLabel(item.status)}</span></header><h2>{item.nama}</h2><code>{item.maskedNik}</code><dl><div><dt>Jalur</dt><dd>{dinsosPathLabel(item.jalur)}</dd></div><div><dt>OPD</dt><dd>{item.targetOpd}</dd></div><div><dt>Program</dt><dd>{item.program ?? "Belum ditentukan"}</dd></div></dl><Link className={styles.action} href={href(filters, page, item.referralId, mode)}>{action === "PROCESS" ? "Proses Rujukan" : action === "PROGRESS" ? "Lacak Progress" : "Lihat Detail"}</Link></article>; })}</div>
         </> : <p className={styles.empty}>{activeFilters ? "Tidak ada referral yang sesuai dengan filter." : "Belum ada referral MBI."}</p>}
-        <nav className={styles.pagination} aria-label="Navigasi halaman referral"><p>Menampilkan {start}–{end} dari {result.total.toLocaleString("id-ID")} referral</p><div>{result.page > 1 ? <Link href={href(filters, result.page - 1)} aria-label="Halaman sebelumnya">‹</Link> : <span>‹</span>}<strong aria-current="page">{result.page}</strong><span>dari {result.totalPages}</span>{result.page < result.totalPages ? <Link href={href(filters, result.page + 1)} aria-label="Halaman berikutnya">›</Link> : <span>›</span>}</div></nav>
+        <nav className={styles.pagination} aria-label="Navigasi halaman referral"><p>Menampilkan {start}–{end} dari {result.total.toLocaleString("id-ID")} referral</p><div>{result.page > 1 ? <Link href={href(filters, result.page - 1)} aria-label="Halaman sebelumnya"><ChevronLeft size={14} /></Link> : <span><ChevronLeft size={14} /></span>}<strong aria-current="page">{result.page}</strong><span>dari {result.totalPages}</span>{result.page < result.totalPages ? <Link href={href(filters, result.page + 1)} aria-label="Halaman berikutnya"><ChevronRight size={14} /></Link> : <span><ChevronRight size={14} /></span>}</div></nav>
       </section>
       {selected && processMode && <ProcessReferralDialog referral={selected} programs={programs} today={today} closeHref={closeHref} />}
       {selected && !processMode && progress && <ReferralProgressDrawer progress={progress} closeHref={closeHref} />}

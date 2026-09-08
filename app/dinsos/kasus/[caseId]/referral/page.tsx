@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 
-import { CaseHero } from "@/components/dinsos/case-hero";
-import { CaseTabs } from "@/components/dinsos/case-tabs";
-import { PathReferralForm } from "@/components/dinsos/path-referral-form";
-import { ReferralAction } from "@/components/dinsos/referral-action";
-import referralStyles from "@/components/dinsos/referral.module.css";
-import styles from "@/components/dinsos/case.module.css";
+import { RingkasanKasus } from "@/components/dinsos/kasus/ringkasan-kasus";
+import { TabTahapanKasus } from "@/components/dinsos/kasus/tab-tahapan-kasus";
+import { PathReferralForm } from "@/components/dinsos/kasus/formulir-referral-jalur";
+import { ReferralAction } from "@/components/dinsos/kasus/aksi-referral";
+import referralStyles from "@/components/dinsos/kasus/referral-kasus.module.css";
+import styles from "@/components/dinsos/kasus/kasus.module.css";
 import { hasCapability } from "@/lib/auth/require-capability";
 import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
 import { getDinsosCaseById } from "@/lib/dinsos/cases";
@@ -73,15 +74,15 @@ export default async function ReferralPage({
           Antrian Kerja Harian &nbsp;/&nbsp; Data Warga &nbsp;/&nbsp; Asesmen Sosial
           &nbsp;/&nbsp; Hasil Desil &nbsp;/&nbsp; <strong>Split Jalur &amp; Referral</strong>
         </span>
-        <Link className={styles.back} href="/dinsos">← Kembali ke Antrian</Link>
+        <Link className={styles.back} href="/dinsos"><ArrowLeft size={14} /> Kembali ke Antrian</Link>
       </div>
-      <CaseHero item={item} compact />
-      <CaseTabs caseId={caseId} active="referral" assessmentReady resultReady />
+      <RingkasanKasus item={item} ringkas />
+      <TabTahapanKasus caseId={caseId} active="referral" assessmentReady resultReady />
 
       {isStabilization ? (
         <article className={referralStyles.panel}>
           <div>
-            <span className={referralStyles.icon}>♢</span>
+            <span className={referralStyles.icon}><ShieldCheck size={27} /></span>
             {item.referral ? (
               <>
                 <h2>Referral Proteksi &amp; Stabilisasi Telah Dikirim</h2>
@@ -108,7 +109,7 @@ export default async function ReferralPage({
       ) : !pathContext ? (
         <article className={referralStyles.panel}>
           <div>
-            <span className={referralStyles.icon}>◇</span>
+            <span className={referralStyles.icon}><ShieldCheck size={27} /></span>
             <h2>Split Jalur belum dapat diterbitkan</h2>
             <p>Asesmen masih menunggu review supervisor.</p>
           </div>
@@ -116,7 +117,7 @@ export default async function ReferralPage({
       ) : pathContext.existingReferral ? (
         <section className={referralStyles.published} aria-live="polite">
           <header>
-            <span aria-hidden="true">✓</span>
+            <span aria-hidden="true"><CheckCircle2 size={23} /></span>
             <div>
               <p>Status Referral</p>
               <h2>{pathContext.existingReferral.status === "MENUNGGU_RUJUKAN" ? "Menunggu Rujukan" : "Referral Terkirim"}</h2>

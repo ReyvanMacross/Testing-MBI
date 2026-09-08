@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
-import { PrintButton, PrintOnLoad } from "@/components/dinsos/print-on-load";
+import { PrintButton, PrintOnLoad } from "@/components/dinsos/shared/cetak-saat-muat";
 import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
 import { getReferralById } from "@/lib/dinsos/referrals";
 import { dinsosPathLabel } from "@/lib/dinsos/path-values";

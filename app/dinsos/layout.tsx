@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { DinsosShell } from "@/components/dinsos/dinsos-shell";
+import { DinsosShell } from "@/components/dinsos/shell/dinsos-shell";
 import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
 
 export const metadata: Metadata = { title: "Dinas Sosial | Platform MBI" };

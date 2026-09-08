@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import type { AssessmentDetail } from "@/lib/dinsos/assessments";
 import type { DinsosPath } from "@/lib/dinsos/path-values";
 
-import styles from "./assessment-drawer.module.css";
+import styles from "./asesmen-drawer.module.css";
 
 type OpdOption = {
   id: string;
@@ -103,10 +103,7 @@ export function AssessmentReviewDrawer({
         aria-labelledby="assessment-review-title"
       >
         <header>
-          <div>
-            <p>Review Asesmen</p>
-            <h2 id="assessment-review-title">{assessment.assessmentCode}</h2>
-          </div>
+          <h2 id="assessment-review-title">Review Asesmen — {assessment.assessmentCode}</h2>
           <Link href={detailHref} aria-label="Tutup review asesmen">×</Link>
         </header>
         <form className={styles.reviewForm} onSubmit={submit}>
@@ -174,7 +171,7 @@ export function AssessmentReviewDrawer({
               disabled={busy}
               aria-busy={busy}
             >
-              {busy ? "Menyimpan…" : "Setujui & Terbitkan Jalur"}
+              {busy ? "Menyimpan..." : "Setujui & Terbitkan Jalur"}
             </button>
           </footer>
         </form>

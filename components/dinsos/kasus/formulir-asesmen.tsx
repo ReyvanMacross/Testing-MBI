@@ -1,12 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
-import styles from "./assessment.module.css";
+import styles from "./formulir-asesmen.module.css";
 
 type Props = { caseId:string; initial:Record<string,unknown>|null; official:{desil:number;pbi:boolean|null;pkh:boolean|null;bpnt:boolean|null}|null; completed:boolean };
-function Accordion({title,children,initialOpen=false}:{title:string;children:ReactNode;initialOpen?:boolean}){const [open,setOpen]=useState(initialOpen);return <section className={styles.accordion}><button type="button" aria-expanded={open} onClick={()=>setOpen(!open)}><span>{title}</span><span aria-hidden="true">{open?"⌃":"⌄"}</span></button>{open&&<div className={styles.accordionBody}>{children}</div>}</section>}
+function Accordion({title,children,initialOpen=true}:{title:string;children:ReactNode;initialOpen?:boolean}){const [open,setOpen]=useState(initialOpen);return <section className={styles.accordion}><button type="button" aria-expanded={open} onClick={()=>setOpen(!open)}><span>{title}</span>{open?<ChevronUp size={14} aria-hidden="true"/>:<ChevronDown size={14} aria-hidden="true"/>}</button>{open&&<div className={styles.accordionBody}>{children}</div>}</section>}
 const value=(data:Record<string,unknown>|null,key:string)=>typeof data?.[key]==="string"?String(data[key]):"";
 const checked=(data:Record<string,unknown>|null,key:string)=>data?.[key]===true;
 function Radio({name,label,val,initial}:{name:string;label:string;val:string;initial:string}){return <label className={styles.choice}><input type="radio" name={name} value={val} defaultChecked={initial===val}/>{label}</label>}

@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 import type { AssessmentDetail } from "@/lib/dinsos/assessments";
 
-import styles from "./assessment-drawer.module.css";
+import styles from "./asesmen-drawer.module.css";
 
 const date = new Intl.DateTimeFormat("id-ID", {
   timeZone: "Asia/Jakarta",
@@ -63,10 +63,7 @@ export function AssessmentDetailDrawer({
         aria-labelledby="assessment-detail-title"
       >
         <header>
-          <div>
-            <p>Detail Asesmen</p>
-            <h2 id="assessment-detail-title">{assessment.assessmentCode}</h2>
-          </div>
+          <h2 id="assessment-detail-title">Detail Asesmen — {assessment.assessmentCode}</h2>
           <Link href={closeHref} aria-label="Tutup detail asesmen">×</Link>
         </header>
         <div className={styles.content}>

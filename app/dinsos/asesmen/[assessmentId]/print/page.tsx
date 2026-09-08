@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { PrintButton, PrintOnLoad } from "@/components/dinsos/print-on-load";
+import { PrintButton, PrintOnLoad } from "@/components/dinsos/shared/cetak-saat-muat";
 import { assertAssessmentId } from "@/lib/dinsos/assessment-registry-input";
 import { getAssessmentById } from "@/lib/dinsos/assessments";
 

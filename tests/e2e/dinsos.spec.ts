@@ -9,17 +9,19 @@ const artifactDir=path.join(process.cwd(),"artifacts","dinsos");
 let fixture:FixtureState;
 
 async function login(page:import("@playwright/test").Page,identifier:string,password:string){await page.goto("/login");await page.getByLabel("Nama Pengguna atau NIP").fill(identifier);await page.getByLabel("Kata Sandi",{exact:true}).fill(password);await page.getByRole("button",{name:"Masuk",exact:true}).click();await expect(page).toHaveURL(/\/(?:diskominfo|dinsos)$/);}
+async function logout(page:import("@playwright/test").Page){await page.locator('button[aria-haspopup="menu"]').click();await page.getByRole("menuitem",{name:"Keluar"}).click();await expect(page).toHaveURL(/\/login$/);}
+test.use({ viewport: { width: 1024, height: 1024 } });
 
 test.describe.serial("Dinas Sosial workflow",()=>{
   test.beforeAll(()=>{mkdirSync(artifactDir,{recursive:true});execFileSync(process.execPath,["scripts/dev/seed-dinsos-fixtures.mjs"],{cwd:process.cwd(),env:process.env,stdio:"pipe"});fixture=JSON.parse(readFileSync(path.join(artifactDir,"fixture-state.json"),"utf8"));});
   test.afterAll(()=>{execFileSync(process.execPath,["scripts/dev/cleanup-dinsos-fixtures.mjs"],{cwd:process.cwd(),env:process.env,stdio:"pipe"});});
 
   test("Admin Dinsos completes assessment and stabilization handoff",async({page})=>{const identifier=process.env.E2E_DINSOS_IDENTIFIER??process.env.DINSOS_ADMIN_USERNAME;const password=process.env.E2E_DINSOS_PASSWORD??process.env.DINSOS_ADMIN_PASSWORD;if(!identifier||!password)throw new Error("Credential E2E Dinsos belum tersedia.");await login(page,identifier,password);await expect(page).toHaveURL(/\/dinsos$/);await expect(page.getByRole("heading",{name:"Antrian Kerja Harian"})).toBeVisible();await page.screenshot({path:path.join(artifactDir,"01-antrian-desktop.png"),fullPage:true});
-    await page.goto(`/dinsos/kasus/${fixture.workflow}`);await expect(page.getByRole("heading",{level:2,name:"▣ Identitas Pribadi"})).toBeVisible();await page.screenshot({path:path.join(artifactDir,"02-data-warga-desktop.png"),fullPage:true});
-    await page.getByRole("link",{name:/▣ Asesmen Sosial/}).click();await expect(page.getByRole("heading",{name:"Formulir Asesmen Sosial"})).toBeVisible();for(const section of ["2. Pekerjaan","3. Pendidikan","4. Kesehatan","5. Kondisi Keluarga","6. Tempat Tinggal","7. Administrasi","8. Kapasitas Individu"]){await page.getByRole("button",{name:new RegExp(section.replace(".","\\."))}).click();}
+    await page.goto(`/dinsos/kasus/${fixture.workflow}`);await expect(page.getByRole("heading",{level:2,name:"Identitas Pribadi"})).toBeVisible();await page.screenshot({path:path.join(artifactDir,"02-data-warga-desktop.png"),fullPage:true});
+    await page.getByRole("navigation",{name:"Tahapan kasus"}).getByRole("link",{name:"Asesmen Sosial"}).click();await expect(page.getByRole("heading",{name:"Formulir Asesmen Sosial"})).toBeVisible();for(const section of ["2. Pekerjaan","3. Pendidikan","4. Kesehatan","5. Kondisi Keluarga","6. Tempat Tinggal","7. Administrasi","8. Kapasitas Individu"]){const button=page.getByRole("button",{name:new RegExp(section.replace(".","\\."))});if(await button.getAttribute("aria-expanded")==="false")await button.click();}
     await page.getByLabel("Rentang Pendapatan").fill("Rentang sesuai verifikasi lokal");await page.getByLabel("Tidak Bekerja").check();await page.getByLabel("Penghasilan Bulanan *").fill("Belum berpenghasilan");await page.getByLabel("Pendidikan Tertinggi *").fill("SMA");await page.getByLabel("Literasi Digital *").selectOption("CUKUP");await page.getByRole("radio",{name:"Tidak Ada",exact:true}).check();await page.getByLabel("Balita Stunting *").selectOption("TIDAK_ADA_BALITA");await page.getByLabel("Lansia/Disabilitas Tanpa Pendamping *").selectOption("TIDAK");await page.getByLabel("Anak Putus Sekolah *").fill("0");await page.getByLabel("Kelayakan Rumah *").selectOption("LAYAK");await page.getByLabel("Akses Air Bersih & Sanitasi *").selectOption("MEMADAI");for(const label of ["NIK Valid","KK Terbaru","BPJS Aktif"]){await page.getByLabel(label).check();}await page.getByLabel("Motivasi Perubahan (1–5) *").fill("4");await page.getByLabel("Keterampilan yang Dimiliki *").fill("Keterampilan warga terverifikasi");await page.getByRole("button",{name:"Simpan sebagai Draft"}).click();await expect(page.getByText("Draft asesmen berhasil disimpan.")).toBeVisible();await page.screenshot({path:path.join(artifactDir,"03-asesmen-desktop.png"),fullPage:true});await page.getByRole("button",{name:"Selesaikan Asesmen"}).click();await expect(page).toHaveURL(new RegExp(`/dinsos/kasus/${fixture.workflow}/hasil$`));await expect(page.getByText(/Desil [12]/)).toBeVisible();await page.screenshot({path:path.join(artifactDir,"04-hasil-desktop.png"),fullPage:true});await page.getByRole("button",{name:"Konfirmasi Hasil Desil"}).click();await expect(page).toHaveURL(new RegExp(`/dinsos/kasus/${fixture.workflow}/referral$`));await page.screenshot({path:path.join(artifactDir,"05-referral-desktop.png"),fullPage:true});await page.getByRole("button",{name:"Kirim ke Proteksi & Stabilisasi"}).click();await expect(page.getByRole("heading",{name:"Referral Proteksi & Stabilisasi Telah Dikirim"})).toBeVisible();
     await page.setViewportSize({width:390,height:844});for(const [name,url] of [["antrian","/dinsos"],["data-warga",`/dinsos/kasus/${fixture.workflow}`],["asesmen",`/dinsos/kasus/${fixture.workflow}/asesmen`],["hasil",`/dinsos/kasus/${fixture.workflow}/hasil`],["referral",`/dinsos/kasus/${fixture.workflow}/referral`]] as const){await page.goto(url);const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);expect(overflow,`${name} overflow`).toBeLessThanOrEqual(1);await page.screenshot({path:path.join(artifactDir,`mobile-${name}.png`),fullPage:true});}
-    await page.getByRole("button",{name:"Keluar"}).click();await expect(page).toHaveURL(/\/login$/);
+    await logout(page);
   });
 
   test("Role and API isolation are enforced",async({browser,request})=>{const appOrigin=process.env.APP_ORIGIN??"http://localhost:3000";const unauth=await request.post(`${appOrigin}/api/dinsos/cases/${fixture.workflow}/assessment/draft`,{headers:{Origin:appOrigin,"Sec-Fetch-Site":"same-origin"},data:{}});expect(unauth.status()).toBe(401);const unauthDocument=await request.get(`${appOrigin}/api/dinsos/cases/${fixture.workflow}/documents/ktp`);expect(unauthDocument.status()).toBe(401);
@@ -80,8 +82,7 @@ test.describe.serial("Dinas Sosial workflow",()=>{
     await page.screenshot({path:path.join(artifactDir,"11-edit-warga-mobile.png")});
     await page.getByRole("button",{name:"Tutup Edit Data Warga"}).click();
     await page.getByRole("link",{name:"Tutup profil warga"}).click();
-    await page.getByRole("button",{name:"Keluar"}).click();
-    await expect(page).toHaveURL(/\/login$/);
+    await logout(page);
   });
 });
 
@@ -183,8 +184,7 @@ test.describe.serial("Dinas Sosial assessment registry", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await page.screenshot({ path: path.join(artifactDir, "16-asesmen-detail-mobile.png"), fullPage: true });
     await page.getByRole("link", { name: /Tutup (detail|review) asesmen/ }).click();
-    await page.getByRole("button", { name: "Keluar" }).click();
-    await expect(page).toHaveURL(/\/login$/);
+    await logout(page);
   });
 });
 
@@ -325,7 +325,6 @@ test.describe.serial("Dinas Sosial split path", () => {
     }
 
     await page.getByRole("link", { name: "Tutup pelacakan referral" }).click();
-    await page.getByRole("button", { name: "Keluar" }).click();
-    await expect(page).toHaveURL(/\/login$/);
+    await logout(page);
   });
 });

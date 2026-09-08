@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { ChevronLeft, ChevronRight, CircleCheck, ClipboardList, Clock3, Eye, Plus, Search, SquarePen } from "lucide-react";
 import { redirect } from "next/navigation";
 
-import { AssessmentDetailDrawer } from "@/components/dinsos/assessment-detail-drawer";
-import { AssessmentReviewDrawer } from "@/components/dinsos/assessment-review-drawer";
+import { AssessmentDetailDrawer } from "@/components/dinsos/asesmen/detail-asesmen-drawer";
+import { AssessmentReviewDrawer } from "@/components/dinsos/asesmen/review-asesmen-drawer";
+import { JudulHalaman } from "@/components/dinsos/shared/judul-halaman";
+import { KartuRingkasan } from "@/components/dinsos/shared/kartu-ringkasan";
 import { hasCapability } from "@/lib/auth/require-capability";
 import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
 import {
@@ -88,7 +91,7 @@ function Action({
       href={buildHref(filters, page, assessment.assessmentId, review ? "review" : undefined)}
       aria-label={`${review ? "Review" : "Detail"} ${assessment.assessmentCode}`}
     >
-      {review ? "Review" : "Detail"}
+      {review ? <><SquarePen size={13} /> Review</> : <><Eye size={13} /> Detail</>}
     </Link>
   );
 }
@@ -135,27 +138,24 @@ export default async function DinsosAssessmentRegistryPage({ searchParams }: Pro
 
   return (
     <section aria-labelledby="assessment-page-title">
-      <header className={styles.pageHeader}>
-        <div>
-          <h1 id="assessment-page-title">Asesmen Sosial</h1>
-          <p>Pencatatan dan pengelolaan hasil observasi lapangan warga terdaftar</p>
-        </div>
-        <Link href="/dinsos/warga?intent=assessment-new" className={styles.createButton}>
-          + Buat Asesmen Baru
-        </Link>
-      </header>
+      <JudulHalaman
+        id="assessment-page-title"
+        title="Asesmen Sosial"
+        subtitle="Pencatatan dan pengelolaan hasil observasi lapangan warga terdaftar."
+        actions={<Link href="/dinsos/warga?intent=assessment-new" className={styles.createButton}><Plus size={14} /> Buat Asesmen Baru</Link>}
+      />
 
       <div className={styles.summaryGrid}>
-        <article><p>Total Asesmen Tahun Ini</p><strong>{summary.totalThisYear.toLocaleString("id-ID")}</strong></article>
-        <article className={styles.reviewSummary}><p>Membutuhkan Review</p><strong>{summary.needsReview.toLocaleString("id-ID")}</strong></article>
-        <article className={styles.approvedSummary}><p>Terekonsiliasi ke Jalur MBI</p><strong>{summary.reconciledToPath.toLocaleString("id-ID")}</strong></article>
+        <KartuRingkasan label="Total Asesmen Tahun Ini" value={summary.totalThisYear} icon={ClipboardList} />
+        <KartuRingkasan label="Membutuhkan Review" value={summary.needsReview} icon={Clock3} tone="amber" />
+        <KartuRingkasan label="Terekonsiliasi ke Jalur MBI" value={summary.reconciledToPath} icon={CircleCheck} tone="green" />
       </div>
 
       <section className={styles.registryCard} aria-label="Daftar Asesmen Sosial">
         <form className={styles.filters} method="get">
           <label className={styles.searchField}>
             <span>Cari Asesmen</span>
-            <input name="q" type="search" maxLength={100} defaultValue={filters.search} placeholder="Cari NIK, Nama Warga, atau ID Asesmen..." />
+            <span className={styles.searchControl}><Search size={14} aria-hidden="true" /><input name="q" type="search" maxLength={100} defaultValue={filters.search} placeholder="Cari NIK, Nama Warga, atau ID Asesmen..." /></span>
           </label>
           <label><span>Jenis Asesmen</span><select name="type" defaultValue={filters.type ?? ""}><option value="">Semua Jenis</option>{options.types.map((type) => <option key={type.code} value={type.code}>{type.listLabel}</option>)}</select></label>
           <label><span>Rekomendasi Jalur</span><select name="path" defaultValue={filters.path ?? ""}><option value="">Semua Jalur</option><option value="PEKERJA">Pekerja</option><option value="WIRAUSAHA">Wirausaha</option><option value="PENGUATAN_DASAR">Penguatan Dasar</option></select></label>
@@ -200,10 +200,10 @@ export default async function DinsosAssessmentRegistryPage({ searchParams }: Pro
         <nav className={styles.pagination} aria-label="Navigasi halaman Asesmen Sosial">
           <p>Menampilkan {start}–{end} dari {result.total.toLocaleString("id-ID")} asesmen</p>
           <div>
-            {result.page > 1 ? <Link href={buildHref(filters, result.page - 1)} aria-label="Halaman sebelumnya">‹</Link> : <span aria-hidden="true">‹</span>}
+            {result.page > 1 ? <Link href={buildHref(filters, result.page - 1)} aria-label="Halaman sebelumnya"><ChevronLeft size={14} /></Link> : <span aria-hidden="true"><ChevronLeft size={14} /></span>}
             <strong aria-current="page">{result.page}</strong>
             <span>dari {result.totalPages}</span>
-            {result.page < result.totalPages ? <Link href={buildHref(filters, result.page + 1)} aria-label="Halaman berikutnya">›</Link> : <span aria-hidden="true">›</span>}
+            {result.page < result.totalPages ? <Link href={buildHref(filters, result.page + 1)} aria-label="Halaman berikutnya"><ChevronRight size={14} /></Link> : <span aria-hidden="true"><ChevronRight size={14} /></span>}
           </div>
         </nav>
       </section>

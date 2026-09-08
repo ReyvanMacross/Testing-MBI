@@ -1,26 +1,180 @@
+import {
+  ChartNoAxesColumnIncreasing,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  GitBranch,
+  Search,
+  Send,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 
+import { JudulHalaman } from "@/components/dinsos/shared/judul-halaman";
+import { KartuRingkasan } from "@/components/dinsos/shared/kartu-ringkasan";
 import { DINSOS_STAGES, stageLabel } from "@/lib/dinsos/case-stage";
-import { getDinsosCases, getDinsosFilterOptions, getQueueSummary, type DinsosCaseFilters } from "@/lib/dinsos/cases";
+import {
+  getDinsosCases,
+  getDinsosFilterOptions,
+  getQueueSummary,
+  type DinsosCaseFilters,
+} from "@/lib/dinsos/cases";
+
 import styles from "./dinsos.module.css";
 
-type Props = { searchParams: Promise<{q?:string;kelurahan?:string;stage?:string;sort?:string;page?:string}> };
-function href(filters: DinsosCaseFilters, page: number) { const p=new URLSearchParams(); if(filters.search)p.set("q",filters.search);if(filters.kelurahan)p.set("kelurahan",filters.kelurahan);if(filters.stage)p.set("stage",filters.stage);if(filters.sort&&filters.sort!=="priority")p.set("sort",filters.sort);if(page>1)p.set("page",String(page));const q=p.toString();return q?`/dinsos?${q}`:"/dinsos"; }
-const date=(value:string)=>new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",day:"2-digit",month:"short",year:"numeric"}).format(new Date(value));
+type Props = {
+  searchParams: Promise<{
+    q?: string;
+    kelurahan?: string;
+    stage?: string;
+    sort?: string;
+    page?: string;
+  }>;
+};
 
-export default async function DinsosQueuePage({searchParams}:Props){
-  const p=await searchParams; const page=Math.max(1,Number.parseInt(p.page??"1",10)||1);
-  const search=p.q?.trim();const kelurahan=p.kelurahan?.trim();
-  const filters:DinsosCaseFilters={search:search&&search.length<=100?search:undefined,kelurahan:kelurahan&&kelurahan.length<=100?kelurahan:undefined,stage:DINSOS_STAGES.includes(p.stage as never)?p.stage:undefined,sort:["priority","oldest","newest"].includes(p.sort??"")?p.sort as DinsosCaseFilters["sort"]:"priority",page};
-  const [summary,result,options]=await Promise.all([getQueueSummary(),getDinsosCases(filters),getDinsosFilterOptions()]);
-  const cards=[[
-    "Menunggu Asesmen",summary.waitingAssessment],["Menunggu Penetapan Desil",summary.waitingDesil],["Menunggu Stabilisasi",summary.waitingStabilization],["Menunggu Split Jalur",summary.waitingSplit],["Referral Terkirim Bulan Ini",summary.referralsThisMonth]] as const;
-  return <section aria-labelledby="queue-heading">
-    <header className={styles.pageHeader}><h1 id="queue-heading">Antrian Kerja Harian</h1><p>Selamat datang, Tim Dinas Sosial. Berikut adalah daftar antrian tugas perlindungan dan inklusi sosial hari ini.</p></header>
-    <div className={styles.summary}>{cards.map(([title,value])=><article key={title}><p>{title}</p><strong>{value}</strong><span aria-hidden="true">▣</span></article>)}</div>
-    <section className={styles.queueCard}><div className={styles.queueHeader}><h2>Antrian Kerja Hari Ini</h2><form className={styles.filters} method="get"><label><span className={styles.srOnly}>Cari NIK atau nama</span><input name="q" defaultValue={filters.search} placeholder="NIK atau Nama..." maxLength={100}/></label><label><span className={styles.srOnly}>Kelurahan</span><select name="kelurahan" defaultValue={filters.kelurahan??""}><option value="">Semua Kelurahan</option>{options.kelurahan.map(x=><option key={x}>{x}</option>)}</select></label><label><span className={styles.srOnly}>Tahap</span><select name="stage" defaultValue={filters.stage??""}><option value="">Semua Tahap</option>{DINSOS_STAGES.slice(0,6).map(x=><option key={x} value={x}>{stageLabel(x)}</option>)}</select></label><select name="sort" defaultValue={filters.sort} aria-label="Urutkan"><option value="priority">Prioritas</option><option value="oldest">Terlama</option><option value="newest">Terbaru</option></select><button type="submit">Terapkan</button>{(filters.search||filters.kelurahan||filters.stage||filters.sort!=="priority")&&<Link href="/dinsos">Reset</Link>}</form></div>
-      {result.cases.length===0?<p className={styles.empty}>{filters.search||filters.kelurahan||filters.stage?"Tidak ada kasus yang sesuai dengan filter.":"Belum ada antrian kasus Dinas Sosial."}</p>:<><div className={styles.desktop}><table><thead><tr><th>NIK</th><th>Nama</th><th>Kelurahan</th><th>Tahap Saat Ini</th><th>Prioritas</th><th>Tanggal Masuk</th><th>Aksi</th></tr></thead><tbody>{result.cases.map(x=><tr key={x.caseId}><td>{x.maskedNik}</td><td>{x.nama}</td><td>{x.kelurahan??"—"}{!x.locationResolved&&<span className={styles.unresolved} title="Belum terhubung master wilayah">!</span>}</td><td><span className={styles.stage}>{stageLabel(x.currentStage)}</span></td><td><span className={`${styles.priority} ${styles[x.priority.toLowerCase()]}`}>{x.priority}</span></td><td>{date(x.queueEnteredAt)}</td><td><Link className={styles.process} href={`/dinsos/kasus/${x.caseId}`}>Proses</Link></td></tr>)}</tbody></table></div><div className={styles.mobile}>{result.cases.map(x=><article key={x.caseId}><h3>{x.nama}</h3><p>{x.maskedNik} • {x.kelurahan??"—"}</p><dl><div><dt>Tahap</dt><dd>{stageLabel(x.currentStage)}</dd></div><div><dt>Prioritas</dt><dd>{x.priority}</dd></div><div><dt>Masuk</dt><dd>{date(x.queueEnteredAt)}</dd></div></dl><Link className={styles.process} href={`/dinsos/kasus/${x.caseId}`}>Proses</Link></article>)}</div></>}
-      {result.total>0&&<nav className={styles.pagination} aria-label="Navigasi antrian"><p>Menampilkan {(result.page-1)*result.pageSize+1}–{Math.min(result.page*result.pageSize,result.total)} dari {result.total} antrian</p><div>{result.page>1?<Link href={href(filters,result.page-1)}>‹</Link>:<span>‹</span>}<strong>{result.page}</strong>{result.page<result.totalPages?<Link href={href(filters,result.page+1)}>›</Link>:<span>›</span>}</div></nav>}
+function href(filters: DinsosCaseFilters, page: number) {
+  const params = new URLSearchParams();
+  if (filters.search) params.set("q", filters.search);
+  if (filters.kelurahan) params.set("kelurahan", filters.kelurahan);
+  if (filters.stage) params.set("stage", filters.stage);
+  if (filters.sort && filters.sort !== "priority") params.set("sort", filters.sort);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/dinsos?${query}` : "/dinsos";
+}
+
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+
+export default async function DinsosQueuePage({ searchParams }: Props) {
+  const params = await searchParams;
+  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
+  const search = params.q?.trim();
+  const kelurahan = params.kelurahan?.trim();
+  const filters: DinsosCaseFilters = {
+    search: search && search.length <= 100 ? search : undefined,
+    kelurahan: kelurahan && kelurahan.length <= 100 ? kelurahan : undefined,
+    stage: DINSOS_STAGES.includes(params.stage as never) ? params.stage : undefined,
+    sort: ["priority", "oldest", "newest"].includes(params.sort ?? "")
+      ? (params.sort as DinsosCaseFilters["sort"])
+      : "priority",
+    page,
+  };
+  const [summary, result, options] = await Promise.all([
+    getQueueSummary(),
+    getDinsosCases(filters),
+    getDinsosFilterOptions(),
+  ]);
+  const cards = [
+    { label: "Menunggu Asesmen", value: summary.waitingAssessment, icon: ClipboardList, tone: "blue" as const },
+    { label: "Menunggu Penetapan Desil", value: summary.waitingDesil, icon: ChartNoAxesColumnIncreasing, tone: "neutral" as const },
+    { label: "Menunggu Stabilisasi", value: summary.waitingStabilization, icon: ShieldCheck, tone: "neutral" as const },
+    { label: "Menunggu Split Jalur", value: summary.waitingSplit, icon: GitBranch, tone: "amber" as const },
+    { label: "Referral Terkirim Bulan Ini", value: summary.referralsThisMonth, icon: Send, tone: "green" as const },
+  ];
+
+  const hasFilters = Boolean(filters.search || filters.kelurahan || filters.stage || filters.sort !== "priority");
+  const start = result.total ? (result.page - 1) * result.pageSize + 1 : 0;
+  const end = Math.min(result.page * result.pageSize, result.total);
+
+  return (
+    <section aria-labelledby="queue-heading">
+      <JudulHalaman
+        id="queue-heading"
+        title="Antrian Kerja Harian"
+        subtitle="Daftar tugas perlindungan dan inklusi sosial yang perlu ditindaklanjuti hari ini."
+      />
+
+      <div className={styles.summary}>
+        {cards.map((card) => <KartuRingkasan key={card.label} {...card} />)}
+      </div>
+
+      <section className={styles.queueCard}>
+        <div className={styles.queueHeader}>
+          <h2>Antrian Kerja Hari Ini</h2>
+          <form className={styles.filters} method="get">
+            <label className={styles.searchField}>
+              <span className={styles.srOnly}>Cari NIK atau nama</span>
+              <Search size={15} aria-hidden="true" />
+              <input name="q" defaultValue={filters.search} placeholder="NIK atau Nama..." maxLength={100} />
+            </label>
+            <label>
+              <span className={styles.srOnly}>Kelurahan</span>
+              <select name="kelurahan" defaultValue={filters.kelurahan ?? ""}>
+                <option value="">Semua Kelurahan</option>
+                {options.kelurahan.map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </label>
+            <label>
+              <span className={styles.srOnly}>Tahap</span>
+              <select name="stage" defaultValue={filters.stage ?? ""}>
+                <option value="">Semua Tahap</option>
+                {DINSOS_STAGES.slice(0, 6).map((item) => <option key={item} value={item}>{stageLabel(item)}</option>)}
+              </select>
+            </label>
+            <select name="sort" defaultValue={filters.sort} aria-label="Urutkan antrian">
+              <option value="priority">Prioritas</option>
+              <option value="oldest">Terlama</option>
+              <option value="newest">Terbaru</option>
+            </select>
+            <button type="submit">Terapkan</button>
+            {hasFilters && <Link href="/dinsos">Reset</Link>}
+          </form>
+        </div>
+
+        {result.cases.length === 0 ? (
+          <p className={styles.empty}>{hasFilters ? "Tidak ada kasus yang sesuai dengan filter." : "Belum ada antrian kasus Dinas Sosial."}</p>
+        ) : (
+          <>
+            <div className={styles.desktop}>
+              <table>
+                <thead><tr><th>NIK</th><th>Nama</th><th>Kelurahan</th><th>Tahap Saat Ini</th><th>Prioritas</th><th>Tanggal Masuk</th><th>Aksi</th></tr></thead>
+                <tbody>{result.cases.map((item) => (
+                  <tr key={item.caseId}>
+                    <td>{item.maskedNik}</td>
+                    <td><strong>{item.nama}</strong></td>
+                    <td>{item.kelurahan ?? "—"}{!item.locationResolved && <span className={styles.unresolved} title="Belum terhubung master wilayah">!</span>}</td>
+                    <td><span className={styles.stage}>{stageLabel(item.currentStage)}</span></td>
+                    <td><span className={`${styles.priority} ${styles[item.priority.toLowerCase()]}`}>{item.priority}</span></td>
+                    <td>{formatDate(item.queueEnteredAt)}</td>
+                    <td><Link className={styles.process} href={`/dinsos/kasus/${item.caseId}`}>Proses</Link></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+            <div className={styles.mobile}>
+              {result.cases.map((item) => (
+                <article key={item.caseId}>
+                  <header><div><h3>{item.nama}</h3><p>{item.maskedNik}</p></div><span className={`${styles.priority} ${styles[item.priority.toLowerCase()]}`}>{item.priority}</span></header>
+                  <dl>
+                    <div><dt>Kelurahan</dt><dd>{item.kelurahan ?? "—"}</dd></div>
+                    <div><dt>Tahap</dt><dd>{stageLabel(item.currentStage)}</dd></div>
+                    <div><dt>Masuk</dt><dd>{formatDate(item.queueEnteredAt)}</dd></div>
+                  </dl>
+                  <Link className={styles.process} href={`/dinsos/kasus/${item.caseId}`}>Proses Kasus</Link>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+
+        {result.total > 0 && (
+          <nav className={styles.pagination} aria-label="Navigasi antrian">
+            <p>Menampilkan {start}–{end} dari {result.total} antrian</p>
+            <div>
+              {result.page > 1 ? <Link href={href(filters, result.page - 1)} aria-label="Halaman sebelumnya"><ChevronLeft size={14} /></Link> : <span><ChevronLeft size={14} /></span>}
+              <strong>{result.page}</strong>
+              <span className={styles.pageCount}>dari {result.totalPages}</span>
+              {result.page < result.totalPages ? <Link href={href(filters, result.page + 1)} aria-label="Halaman berikutnya"><ChevronRight size={14} /></Link> : <span><ChevronRight size={14} /></span>}
+            </div>
+          </nav>
+        )}
+      </section>
     </section>
-  </section>;
+  );
 }

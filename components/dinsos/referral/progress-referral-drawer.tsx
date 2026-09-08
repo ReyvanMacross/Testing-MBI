@@ -33,7 +33,7 @@ export function ReferralProgressDrawer({ progress, closeHref }: {
       <button className={styles.backdrop} type="button" aria-label="Tutup pelacakan referral" onClick={() => router.push(closeHref)} />
       <aside className={styles.drawer} role="dialog" aria-modal="true" aria-labelledby="progress-title">
         <header className={styles.dialogHeader}>
-          <div><p>Lacak Progress Referral</p><h2 id="progress-title">{progress.referralCode}</h2></div>
+          <h2 id="progress-title">Lacak Progress Referral — {progress.referralCode}</h2>
           <Link href={closeHref} aria-label="Tutup pelacakan referral">×</Link>
         </header>
         <div className={styles.dialogContent}>

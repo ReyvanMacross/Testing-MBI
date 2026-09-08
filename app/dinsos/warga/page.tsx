@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { ChevronLeft, ChevronRight, Eye, Plus, Search, ShieldAlert, SlidersHorizontal, UserCheck, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 
-import { EditWargaDialog } from "@/components/dinsos/edit-warga-dialog";
-import { CreateAssessmentDialog } from "@/components/dinsos/create-assessment-dialog";
-import { WargaProfileDrawer } from "@/components/dinsos/warga-profile-drawer";
+import { EditWargaDialog } from "@/components/dinsos/warga/edit-warga-dialog";
+import { CreateAssessmentDialog } from "@/components/dinsos/asesmen/buat-asesmen-dialog";
+import { WargaProfileDrawer } from "@/components/dinsos/warga/profil-warga-drawer";
+import { JudulHalaman } from "@/components/dinsos/shared/judul-halaman";
+import { KartuRingkasan } from "@/components/dinsos/shared/kartu-ringkasan";
 import { hasCapability } from "@/lib/auth/require-capability";
 import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
 import {
@@ -92,7 +95,7 @@ function WargaDesktopTable({
             <td>{item.desil ?? "—"}</td>
             <td><span className={`${styles.statusBadge} ${verificationClass(item.verificationStatus)}`}>{verificationLabel(item.verificationStatus)}</span></td>
             <td>{item.activePath ? <span className={styles.pathBadge}>{pathLabel(item.activePath)}</span> : "—"}</td>
-            <td><Link className={styles.detailButton} href={buildHref(filters, page, item.wargaId)}>◉ Detail</Link></td>
+            <td><Link className={styles.detailButton} href={buildHref(filters, page, item.wargaId)}><Eye size={13} /> Detail</Link></td>
           </tr>
         ))}</tbody>
       </table>
@@ -144,21 +147,21 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
 
   return (
     <section aria-labelledby="warga-page-title">
-      <header className={styles.pageHeader}>
-        <div><h1 id="warga-page-title">Data Warga</h1><p>Basis data seluruh warga terdaftar dalam sistem MBI</p></div>
-        <button type="button" className={styles.createButton} disabled title="Desain formulir pendaftaran warga belum tersedia">+ Daftarkan Warga Baru</button>
-      </header>
+      <JudulHalaman
+        id="warga-page-title"
+        title="Data Warga"
+        subtitle="Basis data seluruh warga terdaftar dalam sistem MBI."
+        actions={<button type="button" className={styles.createButton} disabled title="Desain formulir pendaftaran warga belum tersedia"><Plus size={14} /> Daftarkan Warga Baru</button>}
+      />
 
       <div className={styles.summaryGrid}>
-        <article><p>Total Warga Terdaftar</p><strong>{summary.total.toLocaleString("id-ID")}</strong></article>
-        <article className={styles.summaryVerified}><p>Sudah Diverifikasi</p><strong>{summary.verified.toLocaleString("id-ID")}</strong></article>
-        <article className={styles.summaryPending}><p>Belum Diverifikasi</p><strong>{summary.unverified.toLocaleString("id-ID")}</strong></article>
+        <KartuRingkasan label="Total Warga Terdaftar" value={summary.total} icon={Users} />
+        <KartuRingkasan label="Sudah Diverifikasi" value={summary.verified} icon={UserCheck} tone="green" />
+        <KartuRingkasan label="Belum Diverifikasi" value={summary.unverified} icon={ShieldAlert} tone="amber" />
       </div>
 
       {options.unresolvedWarga > 0 && (
-        <p className={styles.dataWarning} role="status">
-          {options.unresolvedWarga.toLocaleString("id-ID")} warga belum terhubung ke master wilayah. Nama legacy tetap ditampilkan dan filter kelurahan resmi hanya mencakup data resolved.
-        </p>
+        <p className={styles.dataWarning} role="status"><ShieldAlert size={13} aria-hidden="true" /> {options.unresolvedWarga.toLocaleString("id-ID")} warga belum terhubung ke master wilayah.</p>
       )}
 
       {filters.intent === "assessment-new" && (
@@ -169,11 +172,11 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
 
       <section className={styles.registryCard} aria-label="Daftar Data Warga">
         <form className={styles.filters} method="get">
-          <label><span>Cari Warga</span><input name="q" type="search" defaultValue={filters.search} maxLength={100} placeholder="NIK atau Nama..." /></label>
+          <label><span>Cari Warga</span><span className={styles.searchControl}><Search size={14} aria-hidden="true" /><input name="q" type="search" defaultValue={filters.search} maxLength={100} placeholder="NIK atau Nama..." /></span></label>
           <label><span>Kelurahan</span><select name="kelurahan" defaultValue={filters.kelurahanId ?? ""}><option value="">Semua Kelurahan</option>{Array.from(new Set(options.kelurahan.map((item) => item.kecamatan))).map((kecamatan) => <optgroup key={kecamatan} label={kecamatan}>{options.kelurahan.filter((item) => item.kecamatan === kecamatan).map((item) => <option key={item.id} value={item.id}>{item.nama}</option>)}</optgroup>)}</select></label>
           <label><span>Desil</span><select name="desil" defaultValue={filters.desil ?? ""}><option value="">Semua</option>{Array.from({ length: 10 }, (_, index) => index + 1).map((item) => <option key={item} value={item}>Desil {item}</option>)}</select></label>
           <label><span>Status Verifikasi</span><select name="status" defaultValue={filters.verificationStatus ?? ""}><option value="">Semua Status</option><option value="TERVERIFIKASI">Terverifikasi</option><option value="BELUM">Belum Terverifikasi</option></select></label>
-          <button type="submit" className={styles.filterButton}>☷ Filter</button>
+          <button type="submit" className={styles.filterButton}><SlidersHorizontal size={13} /> Filter</button>
           {activeFilters && <Link href={buildHref({ intent: filters.intent }, 1)} className={styles.resetButton}>Reset</Link>}
         </form>
 
@@ -183,7 +186,7 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
             <div className={styles.mobileCards}>{result.warga.map((item) => (
               <article key={item.wargaId}>
                 <header><div><h2>{item.namaLengkap}</h2><code>{item.maskedNik}</code></div><span className={`${styles.statusBadge} ${verificationClass(item.verificationStatus)}`}>{verificationLabel(item.verificationStatus)}</span></header>
-                <dl><div><dt>Kelurahan</dt><dd>{item.kelurahan ?? "—"}{!item.locationResolved ? " · belum resolved" : ""}</dd></div><div><dt>Desil</dt><dd>{item.desil ?? "—"}</dd></div><div><dt>Jalur</dt><dd>{pathLabel(item.activePath)}</dd></div></dl>
+                <dl><div><dt>Kelurahan</dt><dd>{item.kelurahan ?? "—"}{!item.locationResolved ? " · belum terverifikasi" : ""}</dd></div><div><dt>Desil</dt><dd>{item.desil ?? "—"}</dd></div><div><dt>Jalur</dt><dd>{pathLabel(item.activePath)}</dd></div></dl>
                 <Link className={styles.detailButton} href={buildHref(filters, page, item.wargaId)}>Detail</Link>
               </article>
             ))}</div>
@@ -193,15 +196,15 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
         <nav className={styles.pagination} aria-label="Navigasi halaman Data Warga">
           <p>Menampilkan {start}–{end} dari {result.total.toLocaleString("id-ID")} data</p>
           <div>
-            {result.page > 1 ? <Link href={buildHref(filters, result.page - 1)} aria-label="Halaman sebelumnya">‹</Link> : <span aria-hidden="true">‹</span>}
+            {result.page > 1 ? <Link href={buildHref(filters, result.page - 1)} aria-label="Halaman sebelumnya"><ChevronLeft size={14} /></Link> : <span aria-hidden="true"><ChevronLeft size={14} /></span>}
             <strong aria-current="page">{result.page}</strong>
             <span>dari {result.totalPages}</span>
-            {result.page < result.totalPages ? <Link href={buildHref(filters, result.page + 1)} aria-label="Halaman berikutnya">›</Link> : <span aria-hidden="true">›</span>}
+            {result.page < result.totalPages ? <Link href={buildHref(filters, result.page + 1)} aria-label="Halaman berikutnya"><ChevronRight size={14} /></Link> : <span aria-hidden="true"><ChevronRight size={14} /></span>}
           </div>
         </nav>
       </section>
 
-      {profile && params.mode !== "edit" && params.mode !== "assessment-new" && <WargaProfileDrawer profile={profile} closeHref={buildHref(filters, page)} editHref={buildHref(filters, page, profile.wargaId, "edit")} assessmentHref={buildHref(filters, page, profile.wargaId, "assessment-new")} canEdit={canEdit} />}
+      {profile && params.mode !== "edit" && <WargaProfileDrawer profile={profile} closeHref={buildHref(filters, page)} editHref={buildHref(filters, page, profile.wargaId, "edit")} assessmentHref={buildHref(filters, page, profile.wargaId, "assessment-new")} canEdit={canEdit} />}
       {profile && params.mode === "edit" && <EditWargaDialog profile={profile} closeHref={buildHref(filters, page, profile.wargaId)} kelurahanOptions={options.kelurahan} maritalStatuses={options.maritalStatuses} />}
       {profile && params.mode === "assessment-new" && (
         <CreateAssessmentDialog
