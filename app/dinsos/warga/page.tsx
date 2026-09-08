@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Eye, Plus, Search, ShieldAlert, SlidersHorizontal, UserCheck, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 
+import { DaftarWargaDialog } from "@/components/dinsos/warga/daftar-warga-dialog";
 import { EditWargaDialog } from "@/components/dinsos/warga/edit-warga-dialog";
 import { CreateAssessmentDialog } from "@/components/dinsos/asesmen/buat-asesmen-dialog";
 import { WargaProfileDrawer } from "@/components/dinsos/warga/profil-warga-drawer";
@@ -53,7 +54,7 @@ function buildHref(
   filters: WargaRegistryFilters,
   page: number,
   wargaId?: string,
-  mode?: "edit" | "assessment-new",
+  mode?: "edit" | "assessment-new" | "register",
   reassessmentOf?: string,
 ) {
   const params = new URLSearchParams();
@@ -134,6 +135,9 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
   if (params.mode === "edit" && (!profile || !canEdit)) {
     redirect(profile ? buildHref(filters, page, profile.wargaId) : buildHref(filters, page));
   }
+  if (params.mode === "register" && !canEdit) {
+    redirect(buildHref(filters, page));
+  }
   if (
     params.reassessmentOf &&
     (!UUID.test(params.reassessmentOf) || params.mode !== "assessment-new")
@@ -151,7 +155,7 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
         id="warga-page-title"
         title="Data Warga"
         subtitle="Basis data seluruh warga terdaftar dalam sistem MBI."
-        actions={<button type="button" className={styles.createButton} disabled title="Desain formulir pendaftaran warga belum tersedia"><Plus size={14} /> Daftarkan Warga Baru</button>}
+        actions={canEdit ? <Link href={buildHref(filters, page, undefined, "register")} className={styles.createButton}><Plus size={14} /> Daftarkan Warga Baru</Link> : null}
       />
 
       <div className={styles.summaryGrid}>
@@ -212,6 +216,13 @@ export default async function DinsosWargaPage({ searchParams }: Props) {
           types={assessmentTypes}
           closeHref={buildHref(filters, page, profile.wargaId)}
           reassessmentOf={params.reassessmentOf}
+        />
+      )}
+      {params.mode === "register" && canEdit && (
+        <DaftarWargaDialog
+          closeHref={buildHref(filters, page)}
+          kelurahanOptions={options.kelurahan}
+          maritalStatuses={options.maritalStatuses}
         />
       )}
     </section>

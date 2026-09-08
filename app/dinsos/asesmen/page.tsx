@@ -137,7 +137,7 @@ export default async function DinsosAssessmentRegistryPage({ searchParams }: Pro
   const end = Math.min(result.page * result.pageSize, result.total);
 
   return (
-    <section aria-labelledby="assessment-page-title">
+    <section className={styles.page} aria-labelledby="assessment-page-title">
       <JudulHalaman
         id="assessment-page-title"
         title="Asesmen Sosial"
