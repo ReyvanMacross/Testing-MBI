@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { RingkasanKasus } from "@/components/dinsos/kasus/ringkasan-kasus";
 import { TabTahapanKasus } from "@/components/dinsos/kasus/tab-tahapan-kasus";
+import { TahapBelumTersedia } from "@/components/dinsos/kasus/tahap-belum-tersedia";
 import { PathReferralForm } from "@/components/dinsos/kasus/formulir-referral-jalur";
 import { ReferralAction } from "@/components/dinsos/kasus/aksi-referral";
 import referralStyles from "@/components/dinsos/kasus/referral-kasus.module.css";
@@ -54,11 +55,36 @@ export default async function ReferralPage({
   const actor = await requireDinsosActor();
   const item = await getDinsosCaseById(caseId, actor.profileId);
   if (!item) notFound();
-  if (item.result?.status !== "CONFIRMED") {
-    redirect(`/dinsos/kasus/${caseId}/hasil`);
+  const assessmentReady = item.assessment?.status === "COMPLETED";
+  const resultReady = item.result?.status === "CONFIRMED";
+
+  if (!resultReady) {
+    const prerequisiteHref = assessmentReady
+      ? `/dinsos/kasus/${caseId}/hasil`
+      : `/dinsos/kasus/${caseId}/asesmen`;
+    const prerequisiteLabel = assessmentReady ? "Buka Hasil Desil" : "Isi Asesmen Sosial";
+    const description = assessmentReady
+      ? "Konfirmasikan Hasil Desil terlebih dahulu. Setelah hasil dikonfirmasi, penentuan Split Jalur dan proses Referral dapat dilakukan dari halaman ini."
+      : "Selesaikan Asesmen Sosial dan konfirmasikan Hasil Desil terlebih dahulu. Setelah itu, penentuan Split Jalur dan proses Referral akan tersedia di halaman ini.";
+    return (
+      <section>
+        <div className={styles.breadcrumb}>
+          <span>Antrian Kerja Harian &nbsp;/&nbsp; Data Warga &nbsp;/&nbsp; Asesmen Sosial &nbsp;/&nbsp; Hasil Desil &nbsp;/&nbsp; <strong>Split Jalur &amp; Referral</strong></span>
+          <Link className={styles.back} href="/dinsos"><ArrowLeft size={14} /> Kembali ke Antrian</Link>
+        </div>
+        <RingkasanKasus item={item} ringkas />
+        <TabTahapanKasus caseId={caseId} active="referral" assessmentReady={assessmentReady} resultReady={false} />
+        <TahapBelumTersedia
+          judul="Split Jalur & Referral belum tersedia"
+          deskripsi={description}
+          aksiHref={prerequisiteHref}
+          aksiLabel={prerequisiteLabel}
+        />
+      </section>
+    );
   }
 
-  const isStabilization = item.result.disposition === "STABILISASI_SOSIAL";
+  const isStabilization = item.result?.disposition === "STABILISASI_SOSIAL";
   const [pathContext, targetOpds, canOverridePath] = isStabilization
     ? [null, [], false]
     : await Promise.all([
