@@ -53,6 +53,7 @@
 }
 
 .avatarWarga {
+  position: relative;
   display: grid;
   flex: 0 0 72px;
   width: 72px;
@@ -61,6 +62,7 @@
   border-radius: 4px;
   background: #e2e6eb;
   color: #6d7580;
+  overflow: hidden;
 }
 
 .heroContent {
@@ -304,12 +306,23 @@
 }
 
 .documentPreview {
+  position: relative;
   display: grid;
   height: 112px;
   place-items: center;
   margin-bottom: 8px;
   background: #dfe3e8;
   color: #f8fafc;
+  overflow: hidden;
+}
+
+.gambarTersedia img {
+  object-fit: contain;
+}
+
+.avatarWarga.gambarTersedia img {
+  object-fit: cover;
+  object-position: center 24%;
 }
 
 .document strong {

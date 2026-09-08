@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { RingkasanKasus } from "@/components/dinsos/kasus/ringkasan-kasus";
 import { TabTahapanKasus } from "@/components/dinsos/kasus/tab-tahapan-kasus";
+import { GambarTerlindungi } from "@/components/dinsos/kasus/gambar-terlindungi";
 import styles from "@/components/dinsos/kasus/kasus.module.css";
 import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
 import { getDinsosCaseById } from "@/lib/dinsos/cases";
@@ -74,7 +75,12 @@ export default async function CaseDataPage({ params }: { params: Promise<{ caseI
         <div className={styles.documentList}>
           {documents.map(([type, label, available]) => (
             <div className={styles.document} key={type}>
-              <span className={styles.documentPreview}><ImageIcon size={44} strokeWidth={1.25} /></span>
+              <GambarTerlindungi
+                tersedia={Boolean(available)}
+                src={`/api/dinsos/cases/${caseId}/documents/${type}`}
+                alt={label}
+                jenis="dokumen"
+              />
               <strong>{label}</strong>
               <p>{available ? <a href={`/api/dinsos/cases/${caseId}/documents/${type}`} target="_blank">Lihat dokumen</a> : "Dokumen belum tersedia"}</p>
             </div>
