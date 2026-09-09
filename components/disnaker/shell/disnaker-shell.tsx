@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BookOpenCheck, BriefcaseBusiness, ChevronDown, FileChartColumn, LogOut, Search, UserRound } from "lucide-react";
+import { Bell, BookOpenCheck, BriefcaseBusiness, ChevronDown, FileChartColumn, LogOut, Menu, Search, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -19,6 +19,7 @@ export function DisnakerShell({ children, namaLengkap }: { children: ReactNode; 
   const router = useRouter();
   const accountRef = useRef<HTMLDivElement>(null);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const year = new Date().getFullYear();
 
@@ -45,7 +46,24 @@ export function DisnakerShell({ children, namaLengkap }: { children: ReactNode; 
 
   return (
     <div className={styles.root}>
+      <button type="button" className={`${styles.sidebarBackdrop} ${menuOpen ? styles.sidebarBackdropVisible : ""}`} aria-label="Tutup navigasi" onClick={() => setMenuOpen(false)} />
+      <aside className={`${styles.sidebar} ${menuOpen ? styles.sidebarOpen : ""}`} aria-label="Navigasi Dinas Tenaga Kerja">
+        <div className={styles.sidebarBrand}>
+          <span className={styles.sidebarLogo}><BriefcaseBusiness size={20} /></span>
+          <div><strong>Dinas Tenaga Kerja</strong><span>Kota Bandung</span></div>
+          <button type="button" className={styles.sidebarClose} aria-label="Tutup navigasi" onClick={() => setMenuOpen(false)}><X size={20} /></button>
+        </div>
+        <nav>
+          {navigation.map((item) => {
+            const active = item.href === "/disnaker" ? pathname === item.href : pathname.startsWith(item.href);
+            const Icon = item.icon;
+            return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={active ? styles.active : undefined} onClick={() => setMenuOpen(false)}><Icon size={17} /><span>{item.label}</span></Link>;
+          })}
+        </nav>
+        <div className={styles.sidebarFooter}><strong>Sistem MBI</strong><span>Modul Disnaker</span></div>
+      </aside>
       <header className={styles.header}>
+        <button type="button" className={styles.menuButton} aria-label="Buka navigasi" onClick={() => setMenuOpen(true)}><Menu size={21} /></button>
         <Link href="/disnaker" className={styles.brand}>Platform MBI — Diskominfo Kota Bandung</Link>
         <label className={styles.search}>
           <span className={styles.srOnly}>Cari</span><Search size={18} aria-hidden="true" />
@@ -64,13 +82,6 @@ export function DisnakerShell({ children, namaLengkap }: { children: ReactNode; 
           )}
         </div>
       </header>
-      <nav className={styles.moduleNav} aria-label="Navigasi Dinas Tenaga Kerja">
-        {navigation.map((item) => {
-          const active = item.href === "/disnaker" ? pathname === item.href : pathname.startsWith(item.href);
-          const Icon = item.icon;
-          return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={active ? styles.active : undefined}><Icon size={15} /><span>{item.label}</span></Link>;
-        })}
-      </nav>
       <main className={styles.main}>{children}</main>
       <footer className={styles.footer}>
         <p>© {year} Diskominfo Kota Bandung. All rights reserved.</p>
