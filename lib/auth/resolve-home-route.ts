@@ -11,5 +11,8 @@ export function resolveHomeRoute(profile: HomeRouteProfile) {
   if (profile.role === "INTERVENSI" && profile.opdCode === "DISNAKER") {
     return "/disnaker";
   }
+  if (profile.role === "INTERVENSI" && profile.opdCode === "DISKOP") {
+    return "/diskop";
+  }
   return null;
 }

@@ -22,3 +22,10 @@ if (missing.length > 0) {
   console.error(`Missing production environment variables: ${missing.join(", ")}`);
   process.exitCode = 1;
 }
+
+for (const name of ["DISNAKER_PREVIEW_MODE", "DISKOP_PREVIEW_MODE"]) {
+  if (production && process.env[name] === "true") {
+    console.error(`${name}=true is forbidden in production.`);
+    process.exitCode = 1;
+  }
+}

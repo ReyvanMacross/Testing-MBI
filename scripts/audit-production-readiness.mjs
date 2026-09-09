@@ -32,6 +32,12 @@ const BROWSER_DENIED_TABLES = [
   "disnaker_lembaga_pelaksana",
   "disnaker_mitra_industri",
   "disnaker_penempatan_kerja",
+  "diskop_pendamping",
+  "diskop_program_details",
+  "diskop_interventions",
+  "diskop_intervention_events",
+  "diskop_kemandirian_usaha",
+  "diskop_laporan_omzet",
 ];
 const TEST_PROFILE_IDS = [
   "3b6bf014-f8c7-48c8-ae72-0cb1e70e6b5c",
@@ -187,6 +193,10 @@ const disnakerDomainBlockers = [];
 const disnakerPrivacyBlockers = [];
 const disnakerFixtureBlockers = [];
 const disnakerConfigurationBlockers = [];
+const diskopDomainBlockers = [];
+const diskopPrivacyBlockers = [];
+const diskopFixtureBlockers = [];
+const diskopConfigurationBlockers = [];
 const securityBlockers = [];
 const applicationBlockers = [];
 const deploymentBlockers = [
@@ -240,6 +250,31 @@ const disnakerInterventionEvents = disnakerSchemaResults.disnaker_intervention_e
 const disnakerProviders = disnakerSchemaResults.disnaker_lembaga_pelaksana.rows;
 const disnakerPartners = disnakerSchemaResults.disnaker_mitra_industri.rows;
 const disnakerPlacements = disnakerSchemaResults.disnaker_penempatan_kerja.rows;
+
+const diskopSchemaQueries = {
+  diskop_pendamping: admin.from("diskop_pendamping").select("id,kode,nama,is_active"),
+  diskop_program_details: admin.from("diskop_program_details").select("program_id,pendamping_id,capacity"),
+  diskop_interventions: admin.from("diskop_interventions").select("id,referral_id,program_id,pendamping_id,start_date,participant_status,progress_percent,legal_status,evaluation_note,is_fixture"),
+  diskop_intervention_events: admin.from("diskop_intervention_events").select("id,intervention_id,event_type,note,event_at"),
+  diskop_kemandirian_usaha: admin.from("diskop_kemandirian_usaha").select("id,intervention_id,nib,omzet_bulanan,tanggal_mandiri,evaluasi_akhir"),
+  diskop_laporan_omzet: admin.from("diskop_laporan_omzet").select("id,intervention_id,periode,nominal,status"),
+};
+const diskopSchemaResults = Object.fromEntries(await Promise.all(
+  Object.entries(diskopSchemaQueries).map(async ([table, query]) => [table, await optionalChecked(query)]),
+));
+const unavailableDiskopTables = new Set();
+for (const [table, result] of Object.entries(diskopSchemaResults)) {
+  if (result.error) {
+    unavailableDiskopTables.add(table);
+    diskopDomainBlockers.push(`Hosted schema ${table} unavailable (${result.error.code ?? "QUERY_ERROR"})`);
+  }
+}
+const diskopMentors = diskopSchemaResults.diskop_pendamping.rows;
+const diskopProgramDetails = diskopSchemaResults.diskop_program_details.rows;
+const diskopInterventions = diskopSchemaResults.diskop_interventions.rows;
+const diskopEvents = diskopSchemaResults.diskop_intervention_events.rows;
+const diskopOutcomes = diskopSchemaResults.diskop_kemandirian_usaha.rows;
+const diskopRevenueReports = diskopSchemaResults.diskop_laporan_omzet.rows;
 
 const caseById = new Map(cases.map((row) => [row.id, row]));
 const structuredByCase = new Map(structuredAssessments.map((row) => [row.case_id, row]));
@@ -651,6 +686,40 @@ if (process.env.DISNAKER_PREVIEW_MODE === "true") {
     "DISNAKER_PREVIEW_MODE=true is forbidden for readiness/production",
   );
 }
+
+const diskopMentorById = new Map(diskopMentors.map((row) => [row.id, row]));
+const diskopDetailByProgram = new Map(diskopProgramDetails.map((row) => [row.program_id, row]));
+const diskopInterventionById = new Map(diskopInterventions.map((row) => [row.id, row]));
+const diskopOutcomeByIntervention = new Map(diskopOutcomes.map((row) => [row.intervention_id, row]));
+addCountBlocker(diskopDomainBlockers, "Invalid Diskop program link", diskopProgramDetails.filter((detail) => {
+  const program = programById.get(detail.program_id);
+  return !program || opdById.get(program.opd_id) !== "DISKOP" || program.jalur !== "WIRAUSAHA" || !diskopMentorById.has(detail.pendamping_id);
+}));
+addCountBlocker(diskopDomainBlockers, "Invalid Diskop intervention link", diskopInterventions.filter((intervention) => {
+  const referral = referrals.find((row) => row.id === intervention.referral_id);
+  const detail = diskopDetailByProgram.get(intervention.program_id);
+  return !referral || opdById.get(referral.target_opd_id) !== "DISKOP" || referral.jalur !== "WIRAUSAHA" || !detail || detail.pendamping_id !== intervention.pendamping_id;
+}));
+addCountBlocker(diskopDomainBlockers, "Diskop completed intervention without outcome", diskopInterventions.filter((row) => row.participant_status === "MANDIRI_SELESAI" && !diskopOutcomeByIntervention.has(row.id)));
+addCountBlocker(diskopDomainBlockers, "Orphan Diskop event", diskopEvents.filter((row) => !diskopInterventionById.has(row.intervention_id)));
+addCountBlocker(diskopDomainBlockers, "Orphan Diskop revenue report", diskopRevenueReports.filter((row) => !diskopInterventionById.has(row.intervention_id)));
+const diskopParticipantCounts = new Map();
+for (const row of diskopInterventions.filter((item) => item.participant_status !== "TIDAK_AKTIF")) diskopParticipantCounts.set(row.program_id, (diskopParticipantCounts.get(row.program_id) ?? 0) + 1);
+addCountBlocker(diskopDomainBlockers, "Diskop program over capacity", diskopProgramDetails.filter((row) => (diskopParticipantCounts.get(row.program_id) ?? 0) > row.capacity));
+for (const [table, rows, fields] of [
+  ["diskop_intervention_events", diskopEvents, ["note"]],
+  ["diskop_interventions", diskopInterventions, ["evaluation_note"]],
+  ["diskop_kemandirian_usaha", diskopOutcomes, ["evaluasi_akhir"]],
+]) for (const row of rows) for (const field of fields) if (containsUnmaskedPii(row[field])) diskopPrivacyBlockers.push(`${table}:${row.id}.${field}`);
+
+const diskopAdmin = profiles.find((row) => row.username === "admin.diskop");
+if (!diskopAdmin || !diskopAdmin.auth_user_id || diskopAdmin.status !== "AKTIF" || diskopAdmin.role !== "INTERVENSI" || opdById.get(diskopAdmin.opd_id) !== "DISKOP") {
+  diskopConfigurationBlockers.push("Admin Diskop is not active, auth-linked, and assigned to DISKOP");
+}
+addCountBlocker(diskopFixtureBlockers, "DEV Diskop mentors remaining", diskopMentors.filter((row) => row.kode.startsWith("DEV-")));
+addCountBlocker(diskopFixtureBlockers, "Diskop interventions fixture remaining", diskopInterventions.filter((row) => row.is_fixture));
+if (process.env.DISKOP_PREVIEW_MODE === "true") diskopConfigurationBlockers.push("DISKOP_PREVIEW_MODE=true is forbidden for readiness/production");
+
 const dinsosAdmin = profiles.find((row) => row.email === "dinsos@bandung.go.id");
 if (!dinsosAdmin || !dinsosAdmin.auth_user_id || dinsosAdmin.status !== "AKTIF" || dinsosAdmin.role !== "INTERVENSI" || opdById.get(dinsosAdmin.opd_id) !== "DINSOS") {
   capabilityBlockers.push("Admin Dinsos is not active, linked, and assigned to DINSOS");
@@ -713,6 +782,16 @@ if (!publishableKey) {
     securityBlockers.push("Authenticated Disnaker RLS audit login failed");
   }
 
+  const diskopBrowser = createClient(supabaseUrl, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const diskopProfile = profiles.find((row) => row.username === "admin.diskop");
+  const diskopBrowserLogin = diskopProfile ? await diskopBrowser.auth.signInWithPassword({
+    email: diskopProfile.email ?? "",
+    password: process.env.DISKOP_ADMIN_PASSWORD ?? process.env.E2E_DISKOP_PASSWORD ?? "",
+  }) : { data: { session: null }, error: null };
+  if (diskopProfile && (diskopBrowserLogin.error || !diskopBrowserLogin.data.session)) securityBlockers.push("Authenticated Diskop RLS audit login failed");
+
   const browserActors = [
     ["anon", anonHeaders],
     [
@@ -733,9 +812,15 @@ if (!publishableKey) {
           }
         : null,
     ],
+    [
+      "authenticated-diskop",
+      diskopBrowserLogin.data.session
+        ? { apikey: publishableKey, Authorization: `Bearer ${diskopBrowserLogin.data.session.access_token}` }
+        : null,
+    ],
   ];
   for (const table of BROWSER_DENIED_TABLES) {
-    if (unavailableDisnakerTables.has(table)) continue;
+    if (unavailableDisnakerTables.has(table) || unavailableDiskopTables.has(table)) continue;
     for (const [actor, headers] of browserActors) {
       if (!headers) continue;
       const response = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*&limit=1`, { headers });
@@ -745,6 +830,7 @@ if (!publishableKey) {
   await Promise.all([
     dinsosBrowser.auth.signOut({ scope: "local" }),
     disnakerBrowser.auth.signOut({ scope: "local" }),
+    diskopBrowser.auth.signOut({ scope: "local" }),
   ]);
 }
 if (readable.length) {
@@ -755,6 +841,7 @@ if (unavailableDisnakerTables.size) {
     "Disnaker RLS audit is blocked until the hosted schema migrations are applied",
   );
 }
+if (unavailableDiskopTables.size) securityBlockers.push("Diskop RLS audit is blocked until the hosted schema migrations are applied");
 
 if (!process.env.APP_ORIGIN || process.env.APP_ORIGIN.includes("localhost")) deploymentBlockers.push("APP_ORIGIN belum memakai domain HTTPS production yang exact.");
 if (productionPrograms === 0) {
@@ -770,6 +857,13 @@ const disnakerProductionPrograms = programs.filter(
 if (disnakerProductionPrograms.length === 0) {
   warnings.push("Disnaker master program production = 0");
   deploymentBlockers.push("DISNAKER PRODUCTION MASTER PROGRAM = 0");
+}
+const diskopProductionPrograms = programs.filter(
+  (program) => opdById.get(program.opd_id) === "DISKOP" && program.jalur === "WIRAUSAHA" && !program.kode_program.startsWith("DEV-"),
+);
+if (diskopProductionPrograms.length === 0) {
+  warnings.push("Diskop master program production = 0");
+  deploymentBlockers.push("DISKOP PRODUCTION MASTER PROGRAM = 0");
 }
 if (unresolvedWarga) warnings.push(`${unresolvedWarga} warga unresolved`);
 if (legacyUsers) warnings.push(`${legacyUsers} legacy users tanpa identifier`);
@@ -788,6 +882,10 @@ applicationBlockers.push(
   ...disnakerPrivacyBlockers,
   ...disnakerFixtureBlockers,
   ...disnakerConfigurationBlockers,
+  ...diskopDomainBlockers,
+  ...diskopPrivacyBlockers,
+  ...diskopFixtureBlockers,
+  ...diskopConfigurationBlockers,
   ...securityBlockers,
 );
 
@@ -800,6 +898,10 @@ printSection("DISNAKER DOMAIN INTEGRITY", disnakerDomainBlockers);
 printSection("DISNAKER PRIVACY", disnakerPrivacyBlockers);
 printSection("DISNAKER FIXTURES", disnakerFixtureBlockers);
 printSection("DISNAKER CONFIGURATION", disnakerConfigurationBlockers);
+printSection("DISKOP DOMAIN INTEGRITY", diskopDomainBlockers);
+printSection("DISKOP PRIVACY", diskopPrivacyBlockers);
+printSection("DISKOP FIXTURES", diskopFixtureBlockers);
+printSection("DISKOP CONFIGURATION", diskopConfigurationBlockers);
 printSection("SECURITY BLOCKERS", securityBlockers, "0");
 printSection("APPLICATION BLOCKERS", applicationBlockers, "0");
 printSection("WARNINGS", warnings, "NONE");
@@ -808,8 +910,9 @@ console.log("READINESS COUNTS");
 console.log(`- APPLICATION BLOCKERS: ${applicationBlockers.length}`);
 console.log(`- DINSOS DOMAIN BLOCKERS: ${domainBlockers.length}`);
 console.log(`- DISNAKER DOMAIN BLOCKERS: ${disnakerDomainBlockers.length}`);
+console.log(`- DISKOP DOMAIN BLOCKERS: ${diskopDomainBlockers.length}`);
 console.log(`- SECURITY BLOCKERS: ${securityBlockers.length}`);
-console.log(`- PRIVACY BLOCKERS: ${privacyBlockers.length + disnakerPrivacyBlockers.length}`);
-console.log(`- FIXTURE BLOCKERS: ${fixtureBlockers.length + disnakerFixtureBlockers.length}`);
+console.log(`- PRIVACY BLOCKERS: ${privacyBlockers.length + disnakerPrivacyBlockers.length + diskopPrivacyBlockers.length}`);
+console.log(`- FIXTURE BLOCKERS: ${fixtureBlockers.length + disnakerFixtureBlockers.length + diskopFixtureBlockers.length}`);
 
 if (applicationBlockers.length) process.exitCode = 1;
