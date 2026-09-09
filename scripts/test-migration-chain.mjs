@@ -13,7 +13,7 @@ assert.ok(migrations.length > 0, "Migration directory is empty.");
 assert.equal(migrations[0], "202609040000_initial_schema.sql");
 assert.equal(
   migrations.at(-1),
-  "202609090001_disnaker_workflow_foundation.sql",
+  "202609090003_disnaker_final_hardening.sql",
 );
 assert.equal(new Set(migrations).size, migrations.length, "Duplicate filename found.");
 
@@ -36,7 +36,7 @@ for (const name of migrations) {
   );
 
   for (const match of sql.matchAll(
-    /create\s+or\s+replace\s+function\s+public\.([a-z0-9_]+)/giu,
+    /create\s+(?:or\s+replace\s+)?function\s+public\.([a-z0-9_]+)/giu,
   )) {
     availableFunctions.add(match[1].toLowerCase());
   }

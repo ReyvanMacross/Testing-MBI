@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const admin = createAdminClient();
     const { data, error } = await admin.rpc("disnaker_create_program", {
       p_actor_id: actor.profileId, p_actor_opd_id: actor.opdId, p_code: input.code,
-      p_name: input.name, p_category: input.category, p_institution: input.institution,
+      p_name: input.name, p_category: input.category, p_lembaga_id: input.lembagaId,
       p_duration_value: input.duration, p_duration_unit: input.durationUnit,
       p_capacity: input.capacity, p_description: input.description,
     });
