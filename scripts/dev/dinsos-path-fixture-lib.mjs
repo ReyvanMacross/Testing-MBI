@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { client, validAssessment } from "./dinsos-fixture-lib.mjs";
@@ -17,18 +17,37 @@ const TARGET_CODES = {
   PENGUATAN_DASAR: "DINSOS",
 };
 
+async function readState() {
+  try {
+    return JSON.parse(await readFile(stateFile, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function persistState(state) {
+  await mkdir(path.dirname(stateFile), { recursive: true });
+  await writeFile(stateFile, JSON.stringify(state, null, 2));
+}
+
 export async function cleanupDinsosPathFixtures() {
   const db = await client();
-  const { data: cases, error } = await db
-    .from("dinsos_cases")
-    .select("id")
-    .eq("is_fixture", true);
-  if (error) throw error;
-  if ((cases ?? []).length > 20) {
-    throw new Error(`Fixture cleanup guard: found ${cases.length} cases.`);
+  const state = await readState();
+  const taggedAssessments = await db
+    .from("dinsos_assessments")
+    .select("id,case_id")
+    .eq("is_fixture", true)
+    .like("observation", "Observasi fixture Split Jalur %");
+  if (taggedAssessments.error) throw taggedAssessments.error;
+  const caseIds = [...new Set([
+    ...(taggedAssessments.data ?? []).map((row) => row.case_id),
+    ...Object.values(state ?? {}).map((row) => row?.caseId).filter(Boolean),
+  ].filter(Boolean))];
+  if (caseIds.length > 3) {
+    throw new Error(`Fixture cleanup guard: found ${caseIds.length} exact case IDs.`);
   }
 
-  const caseIds = (cases ?? []).map((item) => item.id);
   if (caseIds.length) {
     const { data: decisions, error: decisionReadError } = await db
       .from("penentuan_jalur")
@@ -174,6 +193,15 @@ export async function seedDinsosPathFixtures() {
       .single();
     if (caseError) throw caseError;
 
+    state[definition.key] = {
+      caseId: caseRow.id,
+      wargaId: candidate.warga_id,
+      officialDesil: candidate.desil_dtsen,
+      approvedPath: definition.path,
+      targetOpdId: opds.get(definition.targetCode),
+    };
+    await persistState(state);
+
     const { data: structured, error: structuredError } = await db
       .from("dinsos_asesmen_sosial")
       .insert({
@@ -266,9 +294,9 @@ export async function seedDinsosPathFixtures() {
       approvedPath: definition.path,
       targetOpdId,
     };
+    await persistState(state);
   }
 
-  await mkdir(path.dirname(stateFile), { recursive: true });
-  await writeFile(stateFile, JSON.stringify(state, null, 2));
+  await persistState(state);
   return state;
 }

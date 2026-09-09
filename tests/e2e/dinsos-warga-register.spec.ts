@@ -99,6 +99,8 @@ test.describe("Pendaftaran warga Dinas Sosial", () => {
     await expect(page.getByRole("dialog", { name: /Profil Warga.*Warga Uji Pendaftaran/ })).toBeVisible();
 
     await page.goto("/dinsos");
+    await page.getByRole("textbox", { name: "Cari NIK atau nama" }).fill("Warga Uji Pendaftaran");
+    await page.getByRole("button", { name: "Terapkan", exact: true }).click();
     await expect(page.getByRole("table").getByText("Warga Uji Pendaftaran", { exact: true })).toBeVisible();
     await expect(page.getByRole("table").getByRole("img", { name: "Foto Warga Uji Pendaftaran" })).toBeVisible();
   });

@@ -30,6 +30,10 @@ async function directDenied(table, headers) {
 }
 
 const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+function addCalendarDays(value, days) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
 let restoredProgram = false;
 try {
   const fixture = await seedDinsosReferralFixtures();
@@ -85,7 +89,7 @@ try {
   const inactive = await send(fixture.waiting.referralId, cookie, { programId: waitingProgram.id, referralDate: today });
   assert.equal(inactive.status, 400);
   await admin.from("master_program_layanan").update({ is_active: true }).eq("id", waitingProgram.id); restoredProgram = false;
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const tomorrow = addCalendarDays(today, 1);
   const future = await send(fixture.waiting.referralId, cookie, { programId: waitingProgram.id, referralDate: tomorrow });
   assert.equal(future.status, 400);
 

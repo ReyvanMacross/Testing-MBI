@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { client, validAssessment } from "./dinsos-fixture-lib.mjs";
@@ -8,29 +8,46 @@ import { PROJECT_ROOT } from "../lib/project-env.mjs";
 const stateFile = path.join(PROJECT_ROOT, "artifacts", "dinsos", "referral-fixture-state.json");
 const STATUS_RANK = { MENUNGGU_RUJUKAN: 0, TERKIRIM: 1, DITERIMA: 2, DIPROSES: 3, SELESAI: 4 };
 
+async function readState() {
+  try {
+    return JSON.parse(await readFile(stateFile, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function persistState(state) {
+  await mkdir(path.dirname(stateFile), { recursive: true });
+  await writeFile(stateFile, JSON.stringify(state, null, 2));
+}
+
 export async function cleanupDinsosReferralFixtures() {
   const db = await client();
-  const [referralResult, assessmentResult] = await Promise.all([
-    db.from("referral_mbi").select("id,case_id,assessment_id,path_decision_id").eq("is_fixture", true),
-    db
-      .from("dinsos_assessments")
-      .select("id,case_id")
-      .eq("is_fixture", true)
-      .like("observation", "Observasi fixture referral %"),
-  ]);
-  if (referralResult.error) throw referralResult.error;
+  const state = await readState();
+  const assessmentResult = await db
+    .from("dinsos_assessments")
+    .select("id,case_id")
+    .eq("is_fixture", true)
+    .like("observation", "Observasi fixture referral %");
   if (assessmentResult.error) throw assessmentResult.error;
-  const referrals = referralResult.data ?? [];
   const taggedAssessments = assessmentResult.data ?? [];
-  if ((referrals ?? []).length > 20) throw new Error(`Fixture cleanup guard: found ${referrals.length} referrals.`);
-  if (taggedAssessments.length > 20) throw new Error(`Fixture cleanup guard: found ${taggedAssessments.length} assessments.`);
   const caseIds = [...new Set([
-    ...referrals.map((row) => row.case_id),
     ...taggedAssessments.map((row) => row.case_id),
+    ...Object.values(state ?? {}).map((row) => row?.caseId),
   ].filter(Boolean))];
+  if (caseIds.length > 5) throw new Error(`Fixture cleanup guard: found ${caseIds.length} exact cases.`);
+  const referralResult = caseIds.length
+    ? await db.from("referral_mbi").select("id,case_id,assessment_id,path_decision_id").in("case_id", caseIds).eq("is_fixture", true)
+    : { data: [], error: null };
+  if (referralResult.error) throw referralResult.error;
+  const referrals = referralResult.data ?? [];
+  if (referrals.length > 5) throw new Error(`Fixture cleanup guard: found ${referrals.length} exact referrals.`);
+  if (taggedAssessments.length > 5) throw new Error(`Fixture cleanup guard: found ${taggedAssessments.length} assessments.`);
   const assessmentIds = [...new Set([
     ...referrals.map((row) => row.assessment_id),
     ...taggedAssessments.map((row) => row.id),
+    ...Object.values(state ?? {}).map((row) => row?.assessmentId),
   ].filter(Boolean))];
   const decisionIds = new Set(referrals.map((row) => row.path_decision_id).filter(Boolean));
   if (caseIds.length) {
@@ -97,6 +114,8 @@ export async function seedDinsosReferralFixtures() {
     const program = definition.program ? programs[definition.program] : null;
     const caseResult = await db.from("dinsos_cases").insert({ warga_id: candidate.warga_id, current_stage: definition.status === "MENUNGGU_RUJUKAN" ? "MENUNGGU_RUJUKAN" : "REFERRAL_TERKIRIM", priority: index === 0 ? "TINGGI" : "SEDANG", assigned_to: actor.id, is_fixture: true }).select("id").single();
     if (caseResult.error) throw caseResult.error;
+    state[definition.key] = { caseId: caseResult.data.id };
+    await persistState(state);
     const structured = await db.from("dinsos_asesmen_sosial").insert({ case_id: caseResult.data.id, created_by: actor.id, completed_by: actor.id, completed_at: submittedAt, desil_dtsen_snapshot: candidate.desil_dtsen, ...validAssessment }).select("id").single();
     if (structured.error) throw structured.error;
     const assessment = await db.from("dinsos_assessments").insert({ warga_id: candidate.warga_id, case_id: caseResult.data.id, assessment_type_code: "INTERVENSI_MBI", assessment_date: today, observation: `Observasi fixture referral ${definition.status}.`, field_recommendation: definition.path, status: "DISETUJUI", created_by: actor.id, submitted_at: submittedAt, is_fixture: true }).select("id,assessment_code").single();
@@ -120,8 +139,8 @@ export async function seedDinsosReferralFixtures() {
     const eventInsert = await db.from("referral_mbi_events").insert(events);
     if (eventInsert.error) throw eventInsert.error;
     state[definition.key] = { caseId: caseResult.data.id, wargaId: candidate.warga_id, assessmentId: assessment.data.id, pathDecisionId: decision.data.id, referralId: referral.data.id, referralCode: referral.data.referral_code, targetOpdId, programId: program?.id ?? null, path: definition.path, status: definition.status };
+    await persistState(state);
   }
-  await mkdir(path.dirname(stateFile), { recursive: true });
-  await writeFile(stateFile, JSON.stringify(state, null, 2));
+  await persistState(state);
   return state;
 }
