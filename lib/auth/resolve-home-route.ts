@@ -8,5 +8,8 @@ export function resolveHomeRoute(profile: HomeRouteProfile) {
   if (profile.role === "INTERVENSI" && profile.opdCode === "DINSOS") {
     return "/dinsos";
   }
+  if (profile.role === "INTERVENSI" && profile.opdCode === "DISNAKER") {
+    return "/disnaker";
+  }
   return null;
 }
