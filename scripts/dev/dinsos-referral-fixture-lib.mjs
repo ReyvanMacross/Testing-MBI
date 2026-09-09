@@ -10,18 +10,40 @@ const STATUS_RANK = { MENUNGGU_RUJUKAN: 0, TERKIRIM: 1, DITERIMA: 2, DIPROSES: 3
 
 export async function cleanupDinsosReferralFixtures() {
   const db = await client();
-  const { data: referrals, error } = await db.from("referral_mbi").select("id,case_id,assessment_id,path_decision_id").eq("is_fixture", true);
-  if (error) throw error;
+  const [referralResult, assessmentResult] = await Promise.all([
+    db.from("referral_mbi").select("id,case_id,assessment_id,path_decision_id").eq("is_fixture", true),
+    db
+      .from("dinsos_assessments")
+      .select("id,case_id")
+      .eq("is_fixture", true)
+      .like("observation", "Observasi fixture referral %"),
+  ]);
+  if (referralResult.error) throw referralResult.error;
+  if (assessmentResult.error) throw assessmentResult.error;
+  const referrals = referralResult.data ?? [];
+  const taggedAssessments = assessmentResult.data ?? [];
   if ((referrals ?? []).length > 20) throw new Error(`Fixture cleanup guard: found ${referrals.length} referrals.`);
-  const caseIds = [...new Set((referrals ?? []).map((row) => row.case_id).filter(Boolean))];
-  const assessmentIds = [...new Set((referrals ?? []).map((row) => row.assessment_id).filter(Boolean))];
-  const decisionIds = [...new Set((referrals ?? []).map((row) => row.path_decision_id).filter(Boolean))];
+  if (taggedAssessments.length > 20) throw new Error(`Fixture cleanup guard: found ${taggedAssessments.length} assessments.`);
+  const caseIds = [...new Set([
+    ...referrals.map((row) => row.case_id),
+    ...taggedAssessments.map((row) => row.case_id),
+  ].filter(Boolean))];
+  const assessmentIds = [...new Set([
+    ...referrals.map((row) => row.assessment_id),
+    ...taggedAssessments.map((row) => row.id),
+  ].filter(Boolean))];
+  const decisionIds = new Set(referrals.map((row) => row.path_decision_id).filter(Boolean));
+  if (caseIds.length) {
+    const linkedDecisions = await db.from("penentuan_jalur").select("id").in("case_id", caseIds);
+    if (linkedDecisions.error) throw linkedDecisions.error;
+    for (const row of linkedDecisions.data ?? []) decisionIds.add(row.id);
+  }
   if (referrals?.length) {
     const deleted = await db.from("referral_mbi").delete().in("id", referrals.map((row) => row.id));
     if (deleted.error) throw deleted.error;
   }
-  if (decisionIds.length) {
-    const deleted = await db.from("penentuan_jalur").delete().in("id", decisionIds);
+  if (decisionIds.size) {
+    const deleted = await db.from("penentuan_jalur").delete().in("id", [...decisionIds]);
     if (deleted.error) throw deleted.error;
   }
   if (caseIds.length) {
@@ -55,8 +77,8 @@ export async function seedDinsosReferralFixtures() {
   const definitions = [
     { key: "waiting", status: "MENUNGGU_RUJUKAN", path: "PENGUATAN_DASAR", opd: "DINSOS", program: null },
     { key: "sent", status: "TERKIRIM", path: "WIRAUSAHA", opd: "DISKOP", program: DEV_PROGRAMS[1].code },
-    { key: "received", status: "DITERIMA", path: "PEKERJA", opd: "DISNAKER", program: DEV_PROGRAMS[2].code },
-    { key: "processing", status: "DIPROSES", path: "PEKERJA", opd: "DISNAKER", program: DEV_PROGRAMS[2].code },
+    { key: "received", status: "DITERIMA", path: "WIRAUSAHA", opd: "DISKOP", program: DEV_PROGRAMS[1].code },
+    { key: "processing", status: "DIPROSES", path: "WIRAUSAHA", opd: "DISKOP", program: DEV_PROGRAMS[1].code },
     { key: "completed", status: "SELESAI", path: "WIRAUSAHA", opd: "DISKOP", program: DEV_PROGRAMS[1].code },
   ];
   const actor = actorResult.data;

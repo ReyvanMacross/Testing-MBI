@@ -1,14 +1,23 @@
 # Disnaker Final Hosted Schema Check
 
-- Migration targets: `202609090001_disnaker_workflow_foundation.sql`, `202609090002_disnaker_operational_master.sql`, and `202609090003_disnaker_final_hardening.sql`
-- Local migration chain: PASS (22 unique, monotonic files)
-- Local trigger function ordering: PASS
-- Hosted migration 001: not applied; the service-role REST probe cannot find `disnaker_program_details`
-- Hosted migration 002: pending migration 001 and SQL Editor execution
-- Hosted workflow validation: pending migrations 001 and 002
-- Hosted migration 003: intentionally not applied before hosted workflow validation
-- Hosted tables, columns, constraints, indexes, RPC, RLS, and privileges: pending SQL Editor execution
+Verified against the hosted Supabase project on 2026-09-09.
 
-The current environment has no Supabase CLI access token, direct database connection, or local Docker runtime, so DDL cannot be applied or verified from this workspace. Run `disnaker-final-schema-check.sql` in the linked Supabase SQL Editor after each ordered rollout step. Every expected table, column, constraint, index, trigger, RPC, and RLS row must report `PASS`. RPC privileges must not list `PUBLIC`, `anon`, or `authenticated`.
+- Migration 001 foundation: APPLIED
+- Migration 001 verification: 3 tables, 4 functions, and 3 RLS-enabled tables PASS
+- Migration 001 direct REST: anon `401`; authenticated Admin Disnaker `403`
+- Migration 002 canonical operations: APPLIED
+- Pre-hardening schema: 6 tables, 20 required columns, 12 foreign keys, 6 RLS-enabled tables, and 6 locked-down server RPCs PASS
+- Hosted real workflow: start, progress, completion, placement, and real placement report PASS
+- Hosted concurrency: last quota slot and duplicate completion each produce 1 success and 1 conflict; no duplicate event or placement PASS
+- Fixture cleanup before hardening: DEV institutions, companies, programs, interventions, placements, referrals, cases, and assessments all `0`
+- Migration 003 final hardening: APPLIED
+- Migration 004 trigger rowtype correction: APPLIED after post-003 workflow validation exposed a rowtype-specific `NEW` field error
+- Final schema objects: 6 tables, 20 required columns, 9 constraints, 8 indexes, 7 routines, and 5 integrity triggers PASS
+- Final RLS: 6/6 tables PASS
+- Unauthorized table grants: `0`
+- Unauthorized RPC grants: `0`
+- Local migration chain: PASS (23 unique, monotonic files)
+- Local trigger function ordering: PASS
+- Final readiness: application, Dinsos domain, Disnaker domain, security, privacy, and fixture blockers all `0`
 
 No database credential or secret is stored in this audit record.

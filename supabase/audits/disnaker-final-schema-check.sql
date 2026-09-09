@@ -1,5 +1,5 @@
 -- Read-only hosted schema audit for Tahap 15B.
--- Run after migrations 202609090001, 202609090002, and 202609090003.
+-- Run after migrations 202609090001 through 202609090004.
 
 with expected_tables(table_name) as (
   values

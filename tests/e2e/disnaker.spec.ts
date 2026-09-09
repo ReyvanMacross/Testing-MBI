@@ -94,7 +94,12 @@ test.describe.serial("Disnaker real database workflow", () => {
     await primaryRow.getByRole("button", { name: "Detail" }).click();
     const detail = page.getByRole("dialog", { name: /Detail Intervensi Warga/ });
     await expect(detail.getByRole("heading", { name: "Riwayat Intervensi" })).toBeVisible();
-    await expect(detail.getByText(/Kehadiran 85%/)).toBeVisible();
+    await expect(
+      detail.getByText(
+        "Peserta aktif mengikuti seluruh modul pengujian E2E. — Kehadiran 85%",
+        { exact: true },
+      ),
+    ).toBeVisible();
     await expect(detail.getByText("Peserta berhasil ditempatkan kerja.")).toBeVisible();
     expect(await page.content()).not.toMatch(/\b\d{16}\b/);
     await page.keyboard.press("Escape");
