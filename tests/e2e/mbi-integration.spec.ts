@@ -50,6 +50,14 @@ const accounts: Account[] = [
     blockedRoute: "/diskominfo",
     heading: "Rujukan Masuk & Intervensi",
   },
+  {
+    name: "DP3A",
+    identifier: process.env.E2E_DP3A_IDENTIFIER,
+    password: process.env.E2E_DP3A_PASSWORD,
+    home: "/dp3a",
+    blockedRoute: "/kecamatan",
+    heading: "Rujukan Masuk & Penanganan Kasus",
+  },
 ];
 
 async function login(page: Page, account: Account) {

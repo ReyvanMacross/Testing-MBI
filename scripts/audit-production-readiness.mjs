@@ -43,6 +43,11 @@ const BROWSER_DENIED_TABLES = [
   "disdik_interventions",
   "disdik_intervention_events",
   "disdik_realisasi_bantuan",
+  "dp3a_unit_layanan",
+  "dp3a_program_details",
+  "dp3a_cases",
+  "dp3a_case_events",
+  "dp3a_realisasi_layanan",
 ];
 const TEST_PROFILE_IDS = [
   "3b6bf014-f8c7-48c8-ae72-0cb1e70e6b5c",
@@ -206,6 +211,10 @@ const disdikDomainBlockers = [];
 const disdikPrivacyBlockers = [];
 const disdikFixtureBlockers = [];
 const disdikConfigurationBlockers = [];
+const dp3aDomainBlockers = [];
+const dp3aPrivacyBlockers = [];
+const dp3aFixtureBlockers = [];
+const dp3aConfigurationBlockers = [];
 const securityBlockers = [];
 const applicationBlockers = [];
 const deploymentBlockers = [
@@ -307,6 +316,29 @@ const disdikProgramDetails = disdikSchemaResults.disdik_program_details.rows;
 const disdikInterventions = disdikSchemaResults.disdik_interventions.rows;
 const disdikEvents = disdikSchemaResults.disdik_intervention_events.rows;
 const disdikRealizations = disdikSchemaResults.disdik_realisasi_bantuan.rows;
+
+const dp3aSchemaQueries = {
+  dp3a_unit_layanan: admin.from("dp3a_unit_layanan").select("id,kode,nama,is_active"),
+  dp3a_program_details: admin.from("dp3a_program_details").select("program_id,unit_id,capacity,budget_per_beneficiary"),
+  dp3a_cases: admin.from("dp3a_cases").select("id,referral_id,program_id,unit_id,start_date,case_status,progress_percent,verification_status,planned_budget,support_item,evaluation_note,is_fixture"),
+  dp3a_case_events: admin.from("dp3a_case_events").select("id,case_id,event_type,note,event_at"),
+  dp3a_realisasi_layanan: admin.from("dp3a_realisasi_layanan").select("id,case_id,realized_amount,realization_date,notes"),
+};
+const dp3aSchemaResults = Object.fromEntries(await Promise.all(
+  Object.entries(dp3aSchemaQueries).map(async ([table, query]) => [table, await optionalChecked(query)]),
+));
+const unavailableDp3aTables = new Set();
+for (const [table, result] of Object.entries(dp3aSchemaResults)) {
+  if (result.error) {
+    unavailableDp3aTables.add(table);
+    dp3aDomainBlockers.push(`Hosted schema ${table} unavailable (${result.error.code ?? "QUERY_ERROR"})`);
+  }
+}
+const dp3aUnits = dp3aSchemaResults.dp3a_unit_layanan.rows;
+const dp3aProgramDetails = dp3aSchemaResults.dp3a_program_details.rows;
+const dp3aCases = dp3aSchemaResults.dp3a_cases.rows;
+const dp3aEvents = dp3aSchemaResults.dp3a_case_events.rows;
+const dp3aRealizations = dp3aSchemaResults.dp3a_realisasi_layanan.rows;
 
 const caseById = new Map(cases.map((row) => [row.id, row]));
 const structuredByCase = new Map(structuredAssessments.map((row) => [row.case_id, row]));
@@ -786,6 +818,41 @@ addCountBlocker(disdikFixtureBlockers, "DEV Disdik schools remaining", disdikSch
 addCountBlocker(disdikFixtureBlockers, "Disdik interventions fixture remaining", disdikInterventions.filter((row) => row.is_fixture));
 if (process.env.DISDIK_PREVIEW_MODE === "true") disdikConfigurationBlockers.push("DISDIK_PREVIEW_MODE=true is forbidden for readiness/production");
 
+const dp3aUnitById = new Map(dp3aUnits.map((row) => [row.id, row]));
+const dp3aDetailByProgram = new Map(dp3aProgramDetails.map((row) => [row.program_id, row]));
+const dp3aCaseById = new Map(dp3aCases.map((row) => [row.id, row]));
+const dp3aRealizationByCase = new Map(dp3aRealizations.map((row) => [row.case_id, row]));
+addCountBlocker(dp3aDomainBlockers, "Invalid DP3A program link", dp3aProgramDetails.filter((detail) => {
+  const program = programById.get(detail.program_id);
+  return !program || opdById.get(program.opd_id) !== "DP3A" || program.jalur !== "PENGUATAN_DASAR" || !dp3aUnitById.has(detail.unit_id);
+}));
+addCountBlocker(dp3aDomainBlockers, "Invalid DP3A case link", dp3aCases.filter((caseRecord) => {
+  const referral = referrals.find((row) => row.id === caseRecord.referral_id);
+  const detail = dp3aDetailByProgram.get(caseRecord.program_id);
+  return !referral || opdById.get(referral.target_opd_id) !== "DP3A" || referral.jalur !== "PENGUATAN_DASAR" || referral.program_id !== caseRecord.program_id || !detail || detail.unit_id !== caseRecord.unit_id;
+}));
+addCountBlocker(dp3aDomainBlockers, "DP3A completed case without realization", dp3aCases.filter((row) => row.case_status === "SELESAI" && !dp3aRealizationByCase.has(row.id)));
+addCountBlocker(dp3aDomainBlockers, "Orphan DP3A event", dp3aEvents.filter((row) => !dp3aCaseById.has(row.case_id)));
+addCountBlocker(dp3aDomainBlockers, "Orphan DP3A realization", dp3aRealizations.filter((row) => !dp3aCaseById.has(row.case_id)));
+addCountBlocker(dp3aDomainBlockers, "DP3A realization over budget", dp3aRealizations.filter((row) => Number(row.realized_amount) > Number(dp3aCaseById.get(row.case_id)?.planned_budget ?? -1)));
+addCountBlocker(dp3aDomainBlockers, "DP3A realization before start", dp3aRealizations.filter((row) => row.realization_date < (dp3aCaseById.get(row.case_id)?.start_date ?? "9999-12-31")));
+const dp3aParticipantCounts = new Map();
+for (const row of dp3aCases.filter((item) => item.case_status !== "TIDAK_AKTIF")) dp3aParticipantCounts.set(row.program_id, (dp3aParticipantCounts.get(row.program_id) ?? 0) + 1);
+addCountBlocker(dp3aDomainBlockers, "DP3A program over capacity", dp3aProgramDetails.filter((row) => (dp3aParticipantCounts.get(row.program_id) ?? 0) > row.capacity));
+for (const [table, rows, fields] of [
+  ["dp3a_case_events", dp3aEvents, ["note"]],
+  ["dp3a_cases", dp3aCases, ["evaluation_note"]],
+  ["dp3a_realisasi_layanan", dp3aRealizations, ["notes"]],
+]) for (const row of rows) for (const field of fields) if (containsUnmaskedPii(row[field])) dp3aPrivacyBlockers.push(`${table}:${row.id}.${field}`);
+
+const dp3aAdmin = profiles.find((row) => row.username === "admin.dp3a");
+if (!dp3aAdmin || !dp3aAdmin.auth_user_id || dp3aAdmin.status !== "AKTIF" || dp3aAdmin.role !== "INTERVENSI" || opdById.get(dp3aAdmin.opd_id) !== "DP3A") {
+  dp3aConfigurationBlockers.push("Admin DP3A is not active, auth-linked, and assigned to DP3A");
+}
+addCountBlocker(dp3aFixtureBlockers, "DEV DP3A units remaining", dp3aUnits.filter((row) => row.kode.startsWith("DEV-")));
+addCountBlocker(dp3aFixtureBlockers, "DP3A cases fixture remaining", dp3aCases.filter((row) => row.is_fixture));
+if (process.env.DP3A_PREVIEW_MODE === "true") dp3aConfigurationBlockers.push("DP3A_PREVIEW_MODE=true is forbidden for readiness/production");
+
 const dinsosAdmin = profiles.find((row) => row.email === "dinsos@bandung.go.id");
 if (!dinsosAdmin || !dinsosAdmin.auth_user_id || dinsosAdmin.status !== "AKTIF" || dinsosAdmin.role !== "INTERVENSI" || opdById.get(dinsosAdmin.opd_id) !== "DINSOS") {
   capabilityBlockers.push("Admin Dinsos is not active, linked, and assigned to DINSOS");
@@ -868,6 +935,16 @@ if (!publishableKey) {
   }) : { data: { session: null }, error: null };
   if (disdikProfile && (disdikBrowserLogin.error || !disdikBrowserLogin.data.session)) securityBlockers.push("Authenticated Disdik RLS audit login failed");
 
+  const dp3aBrowser = createClient(supabaseUrl, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const dp3aProfile = profiles.find((row) => row.username === "admin.dp3a");
+  const dp3aBrowserLogin = dp3aProfile ? await dp3aBrowser.auth.signInWithPassword({
+    email: dp3aProfile.email ?? "",
+    password: process.env.DP3A_ADMIN_PASSWORD ?? process.env.E2E_DP3A_PASSWORD ?? "",
+  }) : { data: { session: null }, error: null };
+  if (dp3aProfile && (dp3aBrowserLogin.error || !dp3aBrowserLogin.data.session)) securityBlockers.push("Authenticated DP3A RLS audit login failed");
+
   const browserActors = [
     ["anon", anonHeaders],
     [
@@ -900,9 +977,15 @@ if (!publishableKey) {
         ? { apikey: publishableKey, Authorization: `Bearer ${disdikBrowserLogin.data.session.access_token}` }
         : null,
     ],
+    [
+      "authenticated-dp3a",
+      dp3aBrowserLogin.data.session
+        ? { apikey: publishableKey, Authorization: `Bearer ${dp3aBrowserLogin.data.session.access_token}` }
+        : null,
+    ],
   ];
   for (const table of BROWSER_DENIED_TABLES) {
-    if (unavailableDisnakerTables.has(table) || unavailableDiskopTables.has(table) || unavailableDisdikTables.has(table)) continue;
+    if (unavailableDisnakerTables.has(table) || unavailableDiskopTables.has(table) || unavailableDisdikTables.has(table) || unavailableDp3aTables.has(table)) continue;
     for (const [actor, headers] of browserActors) {
       if (!headers) continue;
       const response = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*&limit=1`, { headers });
@@ -914,6 +997,7 @@ if (!publishableKey) {
     disnakerBrowser.auth.signOut({ scope: "local" }),
     diskopBrowser.auth.signOut({ scope: "local" }),
     disdikBrowser.auth.signOut({ scope: "local" }),
+    dp3aBrowser.auth.signOut({ scope: "local" }),
   ]);
 }
 if (readable.length) {
@@ -926,6 +1010,7 @@ if (unavailableDisnakerTables.size) {
 }
 if (unavailableDiskopTables.size) securityBlockers.push("Diskop RLS audit is blocked until the hosted schema migrations are applied");
 if (unavailableDisdikTables.size) securityBlockers.push("Disdik RLS audit is blocked until the hosted schema migrations are applied");
+if (unavailableDp3aTables.size) securityBlockers.push("DP3A RLS audit is blocked until the hosted schema migrations are applied");
 
 if (!process.env.APP_ORIGIN || process.env.APP_ORIGIN.includes("localhost")) deploymentBlockers.push("APP_ORIGIN belum memakai domain HTTPS production yang exact.");
 if (productionPrograms === 0) {
@@ -956,6 +1041,13 @@ if (disdikProductionPrograms.length === 0) {
   warnings.push("Disdik master program production = 0");
   deploymentBlockers.push("DISDIK PRODUCTION MASTER PROGRAM = 0");
 }
+const dp3aProductionPrograms = programs.filter(
+  (program) => opdById.get(program.opd_id) === "DP3A" && program.jalur === "PENGUATAN_DASAR" && !program.kode_program.startsWith("DEV-"),
+);
+if (dp3aProductionPrograms.length === 0) {
+  warnings.push("DP3A master program production = 0");
+  deploymentBlockers.push("DP3A PRODUCTION MASTER PROGRAM = 0");
+}
 if (unresolvedWarga) warnings.push(`${unresolvedWarga} warga unresolved`);
 if (legacyUsers) warnings.push(`${legacyUsers} legacy users tanpa identifier`);
 warnings.push("Numeric readiness scoring policy belum disetujui");
@@ -981,6 +1073,10 @@ applicationBlockers.push(
   ...disdikPrivacyBlockers,
   ...disdikFixtureBlockers,
   ...disdikConfigurationBlockers,
+  ...dp3aDomainBlockers,
+  ...dp3aPrivacyBlockers,
+  ...dp3aFixtureBlockers,
+  ...dp3aConfigurationBlockers,
   ...securityBlockers,
 );
 
@@ -1001,6 +1097,10 @@ printSection("DISDIK DOMAIN INTEGRITY", disdikDomainBlockers);
 printSection("DISDIK PRIVACY", disdikPrivacyBlockers);
 printSection("DISDIK FIXTURES", disdikFixtureBlockers);
 printSection("DISDIK CONFIGURATION", disdikConfigurationBlockers);
+printSection("DP3A DOMAIN INTEGRITY", dp3aDomainBlockers);
+printSection("DP3A PRIVACY", dp3aPrivacyBlockers);
+printSection("DP3A FIXTURES", dp3aFixtureBlockers);
+printSection("DP3A CONFIGURATION", dp3aConfigurationBlockers);
 printSection("SECURITY BLOCKERS", securityBlockers, "0");
 printSection("APPLICATION BLOCKERS", applicationBlockers, "0");
 printSection("WARNINGS", warnings, "NONE");
@@ -1011,8 +1111,9 @@ console.log(`- DINSOS DOMAIN BLOCKERS: ${domainBlockers.length}`);
 console.log(`- DISNAKER DOMAIN BLOCKERS: ${disnakerDomainBlockers.length}`);
 console.log(`- DISKOP DOMAIN BLOCKERS: ${diskopDomainBlockers.length}`);
 console.log(`- DISDIK DOMAIN BLOCKERS: ${disdikDomainBlockers.length}`);
+console.log(`- DP3A DOMAIN BLOCKERS: ${dp3aDomainBlockers.length}`);
 console.log(`- SECURITY BLOCKERS: ${securityBlockers.length}`);
-console.log(`- PRIVACY BLOCKERS: ${privacyBlockers.length + disnakerPrivacyBlockers.length + diskopPrivacyBlockers.length + disdikPrivacyBlockers.length}`);
-console.log(`- FIXTURE BLOCKERS: ${fixtureBlockers.length + disnakerFixtureBlockers.length + diskopFixtureBlockers.length + disdikFixtureBlockers.length}`);
+console.log(`- PRIVACY BLOCKERS: ${privacyBlockers.length + disnakerPrivacyBlockers.length + diskopPrivacyBlockers.length + disdikPrivacyBlockers.length + dp3aPrivacyBlockers.length}`);
+console.log(`- FIXTURE BLOCKERS: ${fixtureBlockers.length + disnakerFixtureBlockers.length + diskopFixtureBlockers.length + disdikFixtureBlockers.length + dp3aFixtureBlockers.length}`);
 
 if (applicationBlockers.length) process.exitCode = 1;

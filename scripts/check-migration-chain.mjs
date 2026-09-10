@@ -10,7 +10,7 @@ const migrations = (await readdir(migrationDirectory))
   .sort();
 
 assert.equal(migrations[0], "202609040000_initial_schema.sql");
-assert.equal(migrations.at(-1), "202609110003_kecamatan_final_hardening.sql");
+assert.equal(migrations.at(-1), "202609120004_dp3a_bandung_business_date.sql");
 
 for (const name of migrations) {
   const sql = await readFile(path.join(migrationDirectory, name), "utf8");

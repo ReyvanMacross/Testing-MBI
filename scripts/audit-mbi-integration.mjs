@@ -54,6 +54,7 @@ for (const table of [
   "diskop_interventions",
   "disdik_interventions",
   "kecamatan_warga_usulan",
+  "dp3a_cases",
 ]) {
   const directRls = new RegExp(
     `alter\\s+table\\s+public\\.${table}\\s+enable\\s+row\\s+level\\s+security`,
@@ -72,18 +73,20 @@ const requiredFiles = [
   "supabase/audits/diskop-final-schema-check.sql",
   "supabase/audits/disdik-final-schema-check.sql",
   "supabase/audits/kecamatan-final-schema-check.sql",
+  "supabase/audits/dp3a-final-schema-check.sql",
   "scripts/audit-dinsos-api-guards.mjs",
   "scripts/audit-disnaker-api-guards.mjs",
   "scripts/audit-diskop-api-guards.mjs",
   "scripts/audit-disdik-api-guards.mjs",
   "scripts/audit-kecamatan-api-guards.mjs",
+  "scripts/audit-dp3a-api-guards.mjs",
 ];
 for (const file of requiredFiles) {
   assert.ok(tracked.stdout.split("\0").includes(file), `${file} belum tergabung.`);
 }
 
 const homeRoutes = await readFile(path.join(PROJECT_ROOT, "lib", "auth", "resolve-home-route.ts"), "utf8");
-for (const [opd, route] of [["DINSOS", "/dinsos"], ["DISNAKER", "/disnaker"], ["DISKOP", "/diskop"], ["DISDIK", "/disdik"]]) {
+for (const [opd, route] of [["DINSOS", "/dinsos"], ["DISNAKER", "/disnaker"], ["DISKOP", "/diskop"], ["DISDIK", "/disdik"], ["DP3A", "/dp3a"]]) {
   assert.ok(homeRoutes.includes(`opdCode === "${opd}"`) && homeRoutes.includes(`return "${route}"`), `Routing ${opd} belum tergabung.`);
 }
 assert.ok(homeRoutes.includes('profile.role === "Operator Kecamatan"') && homeRoutes.includes('return "/kecamatan"'), "Routing Kecamatan belum tergabung.");
@@ -96,6 +99,7 @@ for (const script of [
   "audit:diskop-api-guards",
   "audit:disdik-api-guards",
   "audit:kecamatan-api-guards",
+  "audit:dp3a-api-guards",
   "scan:pii",
   "scan:secrets",
 ]) {
@@ -103,7 +107,7 @@ for (const script of [
 }
 
 const productionGuard = await readFile(path.join(PROJECT_ROOT, "scripts", "check-production-env.mjs"), "utf8");
-for (const flag of ["DISNAKER_PREVIEW_MODE", "DISKOP_PREVIEW_MODE", "DISDIK_PREVIEW_MODE"]) {
+for (const flag of ["DISNAKER_PREVIEW_MODE", "DISKOP_PREVIEW_MODE", "DISDIK_PREVIEW_MODE", "DP3A_PREVIEW_MODE"]) {
   assert.ok(productionGuard.includes(flag), `Production guard ${flag} hilang.`);
 }
 
