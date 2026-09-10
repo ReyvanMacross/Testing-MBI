@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { apiErrorResponse, ApiError } from "@/lib/http/api-error-response";
 import { assertBodySize } from "@/lib/http/assert-body-size";
 import { assertSameOrigin } from "@/lib/http/assert-same-origin";
+import { resolveHomeRoute } from "@/lib/auth/resolve-home-route";
 
 const LOGIN_ERROR =
   "Kombinasi Nama Pengguna/NIP atau Kata Sandi salah. Silakan coba lagi atau hubungi Admin.";
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
 
     let profileQuery = admin
       .from("user_profiles")
-      .select("id, auth_user_id, email, nama_lengkap, status, role, opd_id");
+      .select("id, auth_user_id, email, nama_lengkap, status, role, opd_id, master_opd(kode_opd)");
 
     if (isNip) {
       profileQuery = profileQuery.eq("nip", identifier);
@@ -54,6 +55,18 @@ export async function POST(request: Request) {
       !profile.email ||
       profile.status !== "AKTIF"
     ) {
+      return NextResponse.json({ error: LOGIN_ERROR }, { status: 401 });
+    }
+
+    const opd = Array.isArray(profile.master_opd)
+      ? profile.master_opd[0]
+      : profile.master_opd;
+    const redirectTo = resolveHomeRoute({
+      role: profile.role,
+      opdCode: opd?.kode_opd ?? null,
+    });
+
+    if (!redirectTo) {
       return NextResponse.json({ error: LOGIN_ERROR }, { status: 401 });
     }
 
@@ -83,7 +96,7 @@ export async function POST(request: Request) {
       modul: "Autentikasi",
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ ok: true, redirectTo });
   } catch (error) {
     if (error instanceof ApiError) {
       return apiErrorResponse(error, "Login request rejected");

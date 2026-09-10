@@ -25,6 +25,18 @@ const sensitiveTables = [
   "warga",
   "v_warga_desil_current",
   "v_warga_desil_current_resolved",
+  "dinsos_cases",
+  "dinsos_asesmen_sosial",
+  "dinsos_case_results",
+  "referral_mbi",
+  "user_capabilities",
+  "dinsos_assessment_types",
+  "dinsos_assessments",
+  "dinsos_assessment_reviews",
+  "dinsos_path_overrides",
+  "penentuan_jalur",
+  "master_program_layanan",
+  "referral_mbi_events",
 ];
 const adminRpcs = [
   "list_managed_users",
@@ -32,7 +44,46 @@ const adminRpcs = [
   "activity_log_filter_options",
   "list_integrations",
   "integration_summary",
+  "dinsos_queue_summary",
+  "list_dinsos_cases",
+  "dinsos_assessment_summary",
+  "list_dinsos_assessments",
+  "dinsos_review_assessment",
+  "dinsos_target_opd_allowed",
+  "dinsos_publish_path_referral",
+  "dinsos_referral_summary",
+  "list_dinsos_referrals",
+  "dinsos_send_referral",
+  "transition_referral_status",
 ];
+const migrationAdminRpcs = ["dinsos_warga_summary", "list_dinsos_warga"];
+const rpcBodies = {
+  dinsos_review_assessment: {
+    p_assessment_id: "00000000-0000-4000-8000-000000000001",
+    p_actor_id: "00000000-0000-4000-8000-000000000002",
+    p_decision: "APPROVED",
+  },
+  dinsos_target_opd_allowed: {
+    p_path: "PEKERJA",
+    p_target_opd_id: "00000000-0000-4000-8000-000000000001",
+  },
+  dinsos_publish_path_referral: {
+    p_case_id: "00000000-0000-4000-8000-000000000001",
+    p_actor_id: "00000000-0000-4000-8000-000000000002",
+    p_path: "PEKERJA",
+    p_target_opd_id: "00000000-0000-4000-8000-000000000003",
+  },
+  dinsos_send_referral: {
+    p_referral_id: "00000000-0000-4000-8000-000000000001",
+    p_actor_id: "00000000-0000-4000-8000-000000000002",
+    p_program_id: "00000000-0000-4000-8000-000000000003",
+    p_referral_date: "2026-09-07",
+  },
+  transition_referral_status: {
+    p_referral_id: "00000000-0000-4000-8000-000000000001",
+    p_to_status: "DITERIMA",
+  },
+};
 
 async function assertDenied(response, label) {
   const body = await response.text();
@@ -55,10 +106,18 @@ for (const rpc of adminRpcs) {
     await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
       method: "POST",
       headers: { apikey: publishableKey, "Content-Type": "application/json" },
-      body: "{}",
+      body: JSON.stringify(rpcBodies[rpc] ?? {}),
     }),
     `anon RPC ${rpc}`,
   );
+}
+for (const rpc of migrationAdminRpcs) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
+    method: "POST",
+    headers: { apikey: publishableKey, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (response.status !== 404) await assertDenied(response, `anon RPC ${rpc}`);
 }
 
 const browser = createClient(supabaseUrl, publishableKey, {
@@ -88,10 +147,18 @@ for (const rpc of adminRpcs) {
     await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
       method: "POST",
       headers: { ...authenticatedHeaders, "Content-Type": "application/json" },
-      body: "{}",
+      body: JSON.stringify(rpcBodies[rpc] ?? {}),
     }),
     `authenticated RPC ${rpc}`,
   );
+}
+for (const rpc of migrationAdminRpcs) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${rpc}`, {
+    method: "POST",
+    headers: { ...authenticatedHeaders, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (response.status !== 404) await assertDenied(response, `authenticated RPC ${rpc}`);
 }
 await browser.auth.signOut({ scope: "local" });
 
@@ -188,6 +255,19 @@ const activityWriterSource = await readFile(
   path.join(PROJECT_ROOT, "lib", "audit", "write-activity-log.ts"),
   "utf8",
 );
+const wargaRegistryMigration = await readFile(
+  path.join(
+    PROJECT_ROOT,
+    "supabase",
+    "migrations",
+    "202609060009_dinsos_warga_registry.sql",
+  ),
+  "utf8",
+);
+for (const rpc of migrationAdminRpcs) {
+  assert.match(wargaRegistryMigration, new RegExp(`revoke all on function public\\.${rpc}`));
+  assert.match(wargaRegistryMigration, new RegExp(`grant execute on function public\\.${rpc}`));
+}
 assert.match(
   activityWriterSource,
   /metadata:\s*redactAuditMetadata\(input\.metadata \?\? \{\}\)/,
@@ -202,11 +282,21 @@ const mutationRoutes = [
   "app/api/admin/integrations/route.ts",
   "app/api/admin/integrations/[id]/route.ts",
   "app/api/admin/integrations/[id]/test/route.ts",
+  "app/api/dinsos/cases/[caseId]/assessment/draft/route.ts",
+  "app/api/dinsos/cases/[caseId]/assessment/complete/route.ts",
+  "app/api/dinsos/cases/[caseId]/result/override/route.ts",
+  "app/api/dinsos/cases/[caseId]/result/confirm/route.ts",
+  "app/api/dinsos/cases/[caseId]/stabilization/send/route.ts",
+  "app/api/dinsos/warga/[wargaId]/route.ts",
+  "app/api/dinsos/assessments/route.ts",
+  "app/api/dinsos/assessments/[assessmentId]/review/route.ts",
+  "app/api/dinsos/cases/[caseId]/path/publish/route.ts",
+  "app/api/dinsos/referrals/[referralId]/send/route.ts",
 ];
 for (const route of mutationRoutes) {
   const source = await readFile(path.join(PROJECT_ROOT, route), "utf8");
   assert.match(source, /assertSameOrigin\(request\)|assertSameOrigin\(_request\)/);
-  if (route.includes("/admin/") || route.includes("/login/")) {
+  if (!route.includes("/logout/")) {
     assert.match(source, /assertBodySize\(request|assertBodySize\(_request/);
   }
 }

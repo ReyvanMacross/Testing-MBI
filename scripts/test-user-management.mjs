@@ -6,6 +6,11 @@ import {
   getSupabaseAdminEnvironment,
   loadProjectEnvironment,
 } from "./lib/project-env.mjs";
+import {
+  cleanupUserFixture,
+  createUserFixture,
+  uniqueUserIdentity,
+} from "./dev/user-management-fixture-lib.mjs";
 
 const BASE_URL = process.env.MBI_TEST_BASE_URL ?? "http://localhost:3000";
 const ORIGIN = process.env.APP_ORIGIN ?? BASE_URL;
@@ -26,7 +31,7 @@ async function request(path, options = {}) {
   return { response, body };
 }
 
-async function login(identifier, password) {
+async function login(identifier, password, context = identifier) {
   const { response, body } = await request("/api/auth/login", {
     method: "POST",
     headers: {
@@ -37,7 +42,11 @@ async function login(identifier, password) {
     body: JSON.stringify({ identifier, password }),
   });
 
-  assert.equal(response.status, 200, `Login failed: ${JSON.stringify(body)}`);
+  assert.equal(
+    response.status,
+    200,
+    `Login ${context} failed: ${JSON.stringify(body)}`,
+  );
 
   const cookies = response.headers
     .getSetCookie()
@@ -49,11 +58,12 @@ async function login(identifier, password) {
 }
 
 function userPayload(overrides = {}) {
+  const identity = uniqueUserIdentity();
   return {
     namaLengkap: "API Test User",
-    email: "api.test.user@bandung.go.id",
-    username: "api.test.user",
-    nip: "",
+    email: identity.email,
+    username: identity.username,
+    nip: identity.nip,
     role: "Admin Diskominfo",
     opdId: "",
     wilayahId: "",
@@ -84,9 +94,13 @@ async function main() {
   const villagePassword = readRequiredEnvironment(
     "SUPABASE_TEST_VILLAGE_PASSWORD",
   );
+  const dinsosPassword = readRequiredEnvironment("DINSOS_ADMIN_PASSWORD");
   const supabase = createClient(supabaseUrl, supabaseSecretKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  const fixtures = [];
+
+  try {
 
   const { data: wilayah, error: wilayahError } = await supabase
     .from("master_wilayah")
@@ -103,7 +117,7 @@ async function main() {
   assert.ok(andir, "Kecamatan Andir must exist.");
   assert.ok(dago, "Kelurahan Dago must exist.");
 
-  const adminCookie = await login("admin.mbi", adminPassword);
+  const adminCookie = await login("admin.mbi", adminPassword, "Admin Diskominfo");
 
   const unauthenticated = await adminRequest(
     "/api/admin/users",
@@ -143,33 +157,29 @@ async function main() {
   );
   assert.equal(villageWithDistrict.response.status, 400);
 
-  const fieldPayload = userPayload({
+  const fieldFixture = await createUserFixture({
+    admin: supabase,
+    create: (payload) =>
+      adminRequest("/api/admin/users", adminCookie, "POST", payload),
+    payload: userPayload({
     namaLengkap: "Operator Lapangan Test",
-    email: "operator.lapangan.test@bandung.go.id",
-    username: "operator.lapangan.test",
-    nip: "199101012020011001",
     role: "Operator Lapangan",
     wilayahId: andir.id,
     password: fieldPassword,
+    }),
   });
-  const fieldCreated = await adminRequest(
-    "/api/admin/users",
-    adminCookie,
-    "POST",
-    fieldPayload,
-  );
-  assert.equal(
-    fieldCreated.response.status,
-    201,
-    JSON.stringify(fieldCreated.body),
-  );
+  fixtures.push(fieldFixture);
+  const fieldPayload = {
+    email: fieldFixture.email,
+    username: fieldFixture.username,
+    nip: fieldFixture.nip,
+  };
 
   const duplicateUsername = await adminRequest(
     "/api/admin/users",
     adminCookie,
     "POST",
     userPayload({
-      email: "duplicate.username@bandung.go.id",
       username: fieldPayload.username,
       password: fieldPassword,
     }),
@@ -182,7 +192,6 @@ async function main() {
     "POST",
     userPayload({
       email: fieldPayload.email,
-      username: "duplicate.email",
       password: fieldPassword,
     }),
   );
@@ -193,43 +202,35 @@ async function main() {
     adminCookie,
     "POST",
     userPayload({
-      email: "duplicate.nip@bandung.go.id",
-      username: "duplicate.nip",
       nip: fieldPayload.nip,
       password: fieldPassword,
     }),
   );
   assert.equal(duplicateNip.response.status, 409);
 
-  const villagePayload = userPayload({
+  const villageFixture = await createUserFixture({
+    admin: supabase,
+    create: (payload) =>
+      adminRequest("/api/admin/users", adminCookie, "POST", payload),
+    payload: userPayload({
     namaLengkap: "Operator Kelurahan Test",
-    email: "operator.kelurahan.test@bandung.go.id",
-    username: "operator.kelurahan.test",
-    nip: "199201012020011002",
     role: "Operator Kelurahan",
     wilayahId: dago.id,
     password: villagePassword,
+    }),
   });
-  const villageCreated = await adminRequest(
-    "/api/admin/users",
-    adminCookie,
-    "POST",
-    villagePayload,
-  );
-  assert.equal(
-    villageCreated.response.status,
-    201,
-    JSON.stringify(villageCreated.body),
-  );
+  fixtures.push(villageFixture);
 
-  const fieldCookie = await login(fieldPayload.username, fieldPassword);
+  const nonAdminCookie = await login(
+    "admin.dinsos",
+    dinsosPassword,
+    "Admin Dinsos non-Diskominfo",
+  );
   const nonAdminAttempt = await adminRequest(
     "/api/admin/users",
-    fieldCookie,
+    nonAdminCookie,
     "POST",
     userPayload({
-      email: "forbidden.admin@bandung.go.id",
-      username: "forbidden.admin",
       role: "Admin Diskominfo",
     }),
   );
@@ -238,7 +239,7 @@ async function main() {
   const { data: actors, error: actorsError } = await supabase
     .from("user_profiles")
     .select("id, auth_user_id, username, role, wilayah_id, status")
-    .in("username", ["operator.lapangan.test", "operator.kelurahan.test"]);
+    .in("id", [fieldFixture.profileId, villageFixture.profileId]);
   assert.ifError(actorsError);
   assert.equal(actors.length, 2);
   assert.ok(
@@ -273,6 +274,25 @@ async function main() {
   console.log("non-admin API: 403 PASS");
   console.log("Supabase Auth/profile linkage: PASS");
   console.log("create audit log: PASS");
+  } finally {
+    const cleanupErrors = [];
+    for (const fixture of fixtures.reverse()) {
+      try {
+        await cleanupUserFixture(supabase, fixture);
+      } catch (error) {
+        cleanupErrors.push(error instanceof Error ? error.message : String(error));
+      }
+    }
+
+    const { count: remaining, error: remainingError } = await supabase
+      .from("user_profiles")
+      .select("id", { count: "exact", head: true })
+      .like("email", "e2e.user.%@example.invalid");
+    if (remainingError) cleanupErrors.push(remainingError.message);
+    if (remaining !== 0) cleanupErrors.push(`${remaining} fixture user profile(s) remain.`);
+    if (cleanupErrors.length) throw new Error(cleanupErrors.join("\n"));
+    console.log("fixture cleanup: 0 remaining PASS");
+  }
 }
 
 main().catch((error) => {

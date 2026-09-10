@@ -1,0 +1,8 @@
+import { NextResponse } from "next/server";
+import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
+import { getCaseDocumentReference } from "@/lib/dinsos/cases";
+import { assertCaseId } from "@/lib/dinsos/request";
+import { ApiError, apiErrorResponse } from "@/lib/http/api-error-response";
+import { createAdminClient } from "@/lib/supabase/admin";
+const TYPES=["ktp","kk","rumah","kondisi-rumah"] as const;
+export async function GET(_request:Request,{params}:{params:Promise<{caseId:string;type:string}>}){try{await requireDinsosActor();const {caseId,type}=await params;assertCaseId(caseId);if(!TYPES.includes(type as never))throw new ApiError("Dokumen tidak ditemukan.",404);const reference=await getCaseDocumentReference(caseId,type as typeof TYPES[number]);if(!reference)throw new ApiError("Dokumen belum tersedia.",404);let bucket="",path="";try{const url=new URL(reference);const match=url.pathname.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+)$/);if(match){bucket=decodeURIComponent(match[1]);path=decodeURIComponent(match[2]);}}catch{const separator=reference.indexOf("/");if(separator>0){bucket=reference.slice(0,separator);path=reference.slice(separator+1);}}if(!bucket||!path||path.includes(".."))throw new ApiError("Dokumen tidak dapat diakses.",404);const admin=createAdminClient();const {data,error}=await admin.storage.from(bucket).createSignedUrl(path,90);if(error||!data?.signedUrl)throw new ApiError("Dokumen tidak dapat diakses.",404);return NextResponse.redirect(data.signedUrl,{status:302});}catch(error){return apiErrorResponse(error,"Dinsos document access failed","Dokumen tidak dapat diakses.")}}

@@ -61,7 +61,7 @@ async function main() {
   await loadProjectEnvironment();
   const { supabaseUrl, supabaseSecretKey } = getSupabaseAdminEnvironment();
   const adminPassword = requiredEnvironment("SUPABASE_TEST_PASSWORD");
-  const fieldPassword = requiredEnvironment("SUPABASE_TEST_FIELD_PASSWORD");
+  const dinsosPassword = requiredEnvironment("DINSOS_ADMIN_PASSWORD");
   const db = createClient(supabaseUrl, supabaseSecretKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -82,7 +82,7 @@ async function main() {
   const unauthenticated = await exportLogs("");
   assert.equal(unauthenticated.status, 401);
 
-  const fieldCookie = await login("operator.lapangan.test", fieldPassword);
+  const fieldCookie = await login("admin.dinsos", dinsosPassword);
   const forbidden = await exportLogs(fieldCookie);
   assert.equal(forbidden.status, 403);
 

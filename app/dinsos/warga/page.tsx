@@ -1,0 +1,230 @@
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Eye, Plus, Search, ShieldAlert, SlidersHorizontal, UserCheck, Users } from "lucide-react";
+import { redirect } from "next/navigation";
+
+import { DaftarWargaDialog } from "@/components/dinsos/warga/daftar-warga-dialog";
+import { EditWargaDialog } from "@/components/dinsos/warga/edit-warga-dialog";
+import { CreateAssessmentDialog } from "@/components/dinsos/asesmen/buat-asesmen-dialog";
+import { WargaProfileDrawer } from "@/components/dinsos/warga/profil-warga-drawer";
+import { JudulHalaman } from "@/components/dinsos/shared/judul-halaman";
+import { KartuRingkasan } from "@/components/dinsos/shared/kartu-ringkasan";
+import { hasCapability } from "@/lib/auth/require-capability";
+import { requireDinsosActor } from "@/lib/auth/require-dinsos-actor";
+import {
+  getDinsosWarga,
+  getDinsosWargaOptions,
+  getDinsosWargaProfile,
+  getDinsosWargaSummary,
+  type WargaRegistryFilters,
+  type WargaRegistryItem,
+} from "@/lib/dinsos/warga";
+import { getAssessmentTypes } from "@/lib/dinsos/assessments";
+
+import styles from "./warga-page.module.css";
+
+type Props = {
+  searchParams: Promise<{
+    q?: string;
+    kelurahan?: string;
+    desil?: string;
+    status?: string;
+    page?: string;
+    warga?: string;
+    mode?: string;
+    intent?: string;
+    reassessmentOf?: string;
+  }>;
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function verificationLabel(value: string | null) {
+  if (value === "VERIFIED") return "TERVERIFIKASI";
+  if (value === "REJECTED") return "DITOLAK";
+  return "BELUM";
+}
+
+function verificationClass(value: string | null) {
+  if (value === "VERIFIED") return styles.verified;
+  if (value === "REJECTED") return styles.rejected;
+  return styles.pending;
+}
+
+function buildHref(
+  filters: WargaRegistryFilters,
+  page: number,
+  wargaId?: string,
+  mode?: "edit" | "assessment-new" | "register",
+  reassessmentOf?: string,
+) {
+  const params = new URLSearchParams();
+  if (filters.search) params.set("q", filters.search);
+  if (filters.kelurahanId) params.set("kelurahan", filters.kelurahanId);
+  if (filters.desil) params.set("desil", String(filters.desil));
+  if (filters.verificationStatus) params.set("status", filters.verificationStatus);
+  if (filters.intent) params.set("intent", filters.intent);
+  if (page > 1) params.set("page", String(page));
+  if (wargaId) params.set("warga", wargaId);
+  if (mode) params.set("mode", mode);
+  if (reassessmentOf) params.set("reassessmentOf", reassessmentOf);
+  const query = params.toString();
+  return query ? `/dinsos/warga?${query}` : "/dinsos/warga";
+}
+
+function pathLabel(value: string | null) {
+  return value?.replaceAll("_", " ") ?? "—";
+}
+
+function WargaDesktopTable({
+  items,
+  filters,
+  page,
+}: {
+  items: WargaRegistryItem[];
+  filters: WargaRegistryFilters;
+  page: number;
+}) {
+  return (
+    <div className={styles.desktopTable}>
+      <table>
+        <thead><tr><th scope="col">NIK</th><th scope="col">Nama Lengkap</th><th scope="col">Kelurahan</th><th scope="col">Desil</th><th scope="col">Status Verifikasi</th><th scope="col">Jalur Aktif</th><th scope="col">Aksi</th></tr></thead>
+        <tbody>{items.map((item) => (
+          <tr key={item.wargaId}>
+            <td><code>{item.maskedNik}</code></td>
+            <td><strong>{item.namaLengkap}</strong></td>
+            <td>{item.kelurahan ?? "—"}{!item.locationResolved && <span className={styles.unresolved} title="Belum terhubung master wilayah" aria-label="Wilayah belum terverifikasi">!</span>}</td>
+            <td>{item.desil ?? "—"}</td>
+            <td><span className={`${styles.statusBadge} ${verificationClass(item.verificationStatus)}`}>{verificationLabel(item.verificationStatus)}</span></td>
+            <td>{item.activePath ? <span className={styles.pathBadge}>{pathLabel(item.activePath)}</span> : "—"}</td>
+            <td><Link className={styles.detailButton} href={buildHref(filters, page, item.wargaId)}><Eye size={13} /> Detail</Link></td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}
+
+export default async function DinsosWargaPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const search = params.q?.trim();
+  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
+  const desilValue = Number.parseInt(params.desil ?? "", 10);
+  const filters: WargaRegistryFilters = {
+    search: search && search.length <= 100 ? search : undefined,
+    kelurahanId: params.kelurahan && UUID.test(params.kelurahan) ? params.kelurahan : undefined,
+    desil: desilValue >= 1 && desilValue <= 10 ? desilValue : undefined,
+    verificationStatus: ["TERVERIFIKASI", "BELUM"].includes(params.status ?? "")
+      ? params.status as WargaRegistryFilters["verificationStatus"]
+      : undefined,
+    page,
+    intent: params.intent === "assessment-new" ? "assessment-new" : undefined,
+  };
+  const actor = await requireDinsosActor();
+  const [summary, result, options, canEdit, assessmentTypes] = await Promise.all([
+    getDinsosWargaSummary(),
+    getDinsosWarga(filters),
+    getDinsosWargaOptions(),
+    hasCapability(actor.profileId, "DINSOS_WARGA_EDIT"),
+    getAssessmentTypes(),
+  ]);
+
+  const selectedId = params.warga && UUID.test(params.warga) ? params.warga : null;
+  if (params.warga && !selectedId) redirect(buildHref(filters, page));
+  const profile = selectedId ? await getDinsosWargaProfile(selectedId) : null;
+  if (selectedId && !profile) redirect(buildHref(filters, page));
+  if (params.mode === "edit" && (!profile || !canEdit)) {
+    redirect(profile ? buildHref(filters, page, profile.wargaId) : buildHref(filters, page));
+  }
+  if (params.mode === "register" && !canEdit) {
+    redirect(buildHref(filters, page));
+  }
+  if (
+    params.reassessmentOf &&
+    (!UUID.test(params.reassessmentOf) || params.mode !== "assessment-new")
+  ) {
+    redirect(profile ? buildHref(filters, page, profile.wargaId) : buildHref(filters, page));
+  }
+
+  const activeFilters = Boolean(filters.search || filters.kelurahanId || filters.desil || filters.verificationStatus);
+  const start = result.total ? (result.page - 1) * result.pageSize + 1 : 0;
+  const end = Math.min(result.page * result.pageSize, result.total);
+
+  return (
+    <section aria-labelledby="warga-page-title">
+      <JudulHalaman
+        id="warga-page-title"
+        title="Data Warga"
+        subtitle="Basis data seluruh warga terdaftar dalam sistem MBI."
+        actions={canEdit ? <Link href={buildHref(filters, page, undefined, "register")} className={styles.createButton}><Plus size={14} /> Daftarkan Warga Baru</Link> : null}
+      />
+
+      <div className={styles.summaryGrid}>
+        <KartuRingkasan label="Total Warga Terdaftar" value={summary.total} icon={Users} />
+        <KartuRingkasan label="Sudah Diverifikasi" value={summary.verified} icon={UserCheck} tone="green" />
+        <KartuRingkasan label="Belum Diverifikasi" value={summary.unverified} icon={ShieldAlert} tone="amber" />
+      </div>
+
+      {options.unresolvedWarga > 0 && (
+        <p className={styles.dataWarning} role="status"><ShieldAlert size={13} aria-hidden="true" /> {options.unresolvedWarga.toLocaleString("id-ID")} warga belum terhubung ke master wilayah.</p>
+      )}
+
+      {filters.intent === "assessment-new" && (
+        <p className={styles.assessmentIntent} role="status">
+          Pilih warga melalui tombol Detail, lalu gunakan Buat Asesmen Baru pada profil warga.
+        </p>
+      )}
+
+      <section className={styles.registryCard} aria-label="Daftar Data Warga">
+        <form className={styles.filters} method="get">
+          <label><span>Cari Warga</span><span className={styles.searchControl}><Search size={14} aria-hidden="true" /><input name="q" type="search" defaultValue={filters.search} maxLength={100} placeholder="NIK atau Nama..." /></span></label>
+          <label><span>Kelurahan</span><select name="kelurahan" defaultValue={filters.kelurahanId ?? ""}><option value="">Semua Kelurahan</option>{Array.from(new Set(options.kelurahan.map((item) => item.kecamatan))).map((kecamatan) => <optgroup key={kecamatan} label={kecamatan}>{options.kelurahan.filter((item) => item.kecamatan === kecamatan).map((item) => <option key={item.id} value={item.id}>{item.nama}</option>)}</optgroup>)}</select></label>
+          <label><span>Desil</span><select name="desil" defaultValue={filters.desil ?? ""}><option value="">Semua</option>{Array.from({ length: 10 }, (_, index) => index + 1).map((item) => <option key={item} value={item}>Desil {item}</option>)}</select></label>
+          <label><span>Status Verifikasi</span><select name="status" defaultValue={filters.verificationStatus ?? ""}><option value="">Semua Status</option><option value="TERVERIFIKASI">Terverifikasi</option><option value="BELUM">Belum Terverifikasi</option></select></label>
+          <button type="submit" className={styles.filterButton}><SlidersHorizontal size={13} /> Filter</button>
+          {activeFilters && <Link href={buildHref({ intent: filters.intent }, 1)} className={styles.resetButton}>Reset</Link>}
+        </form>
+
+        {result.warga.length ? (
+          <>
+            <WargaDesktopTable items={result.warga} filters={filters} page={page} />
+            <div className={styles.mobileCards}>{result.warga.map((item) => (
+              <article key={item.wargaId}>
+                <header><div><h2>{item.namaLengkap}</h2><code>{item.maskedNik}</code></div><span className={`${styles.statusBadge} ${verificationClass(item.verificationStatus)}`}>{verificationLabel(item.verificationStatus)}</span></header>
+                <dl><div><dt>Kelurahan</dt><dd>{item.kelurahan ?? "—"}{!item.locationResolved ? " · belum terverifikasi" : ""}</dd></div><div><dt>Desil</dt><dd>{item.desil ?? "—"}</dd></div><div><dt>Jalur</dt><dd>{pathLabel(item.activePath)}</dd></div></dl>
+                <Link className={styles.detailButton} href={buildHref(filters, page, item.wargaId)}>Detail</Link>
+              </article>
+            ))}</div>
+          </>
+        ) : <p className={styles.empty}>{activeFilters ? "Tidak ada warga yang sesuai dengan filter." : "Belum ada data warga."}</p>}
+
+        <nav className={styles.pagination} aria-label="Navigasi halaman Data Warga">
+          <p>Menampilkan {start}–{end} dari {result.total.toLocaleString("id-ID")} data</p>
+          <div>
+            {result.page > 1 ? <Link href={buildHref(filters, result.page - 1)} aria-label="Halaman sebelumnya"><ChevronLeft size={14} /></Link> : <span aria-hidden="true"><ChevronLeft size={14} /></span>}
+            <strong aria-current="page">{result.page}</strong>
+            <span>dari {result.totalPages}</span>
+            {result.page < result.totalPages ? <Link href={buildHref(filters, result.page + 1)} aria-label="Halaman berikutnya"><ChevronRight size={14} /></Link> : <span aria-hidden="true"><ChevronRight size={14} /></span>}
+          </div>
+        </nav>
+      </section>
+
+      {profile && params.mode !== "edit" && <WargaProfileDrawer profile={profile} closeHref={buildHref(filters, page)} editHref={buildHref(filters, page, profile.wargaId, "edit")} assessmentHref={buildHref(filters, page, profile.wargaId, "assessment-new")} canEdit={canEdit} />}
+      {profile && params.mode === "edit" && <EditWargaDialog profile={profile} closeHref={buildHref(filters, page, profile.wargaId)} kelurahanOptions={options.kelurahan} maritalStatuses={options.maritalStatuses} />}
+      {profile && params.mode === "assessment-new" && (
+        <CreateAssessmentDialog
+          profile={profile}
+          types={assessmentTypes}
+          closeHref={buildHref(filters, page, profile.wargaId)}
+          reassessmentOf={params.reassessmentOf}
+        />
+      )}
+      {params.mode === "register" && canEdit && (
+        <DaftarWargaDialog
+          closeHref={buildHref(filters, page)}
+          kelurahanOptions={options.kelurahan}
+          maritalStatuses={options.maritalStatuses}
+        />
+      )}
+    </section>
+  );
+}
