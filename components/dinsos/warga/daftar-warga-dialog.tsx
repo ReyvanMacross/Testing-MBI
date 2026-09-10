@@ -171,8 +171,7 @@ export function DaftarWargaDialog({
       if (!response.ok || !body.wargaId) {
         throw new Error(body.error ?? "Warga baru tidak dapat didaftarkan.");
       }
-      router.push(`/dinsos/warga?warga=${body.wargaId}`);
-      router.refresh();
+      router.replace(`/dinsos/warga?warga=${body.wargaId}`);
     } catch (submitError) {
       setError(
         submitError instanceof Error

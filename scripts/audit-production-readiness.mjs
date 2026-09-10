@@ -26,6 +26,12 @@ const BROWSER_DENIED_TABLES = [
   "referral_mbi_events",
   "master_program_layanan",
   "user_capabilities",
+  "disnaker_program_details",
+  "disnaker_interventions",
+  "disnaker_intervention_events",
+  "disnaker_lembaga_pelaksana",
+  "disnaker_mitra_industri",
+  "disnaker_penempatan_kerja",
 ];
 const TEST_PROFILE_IDS = [
   "3b6bf014-f8c7-48c8-ae72-0cb1e70e6b5c",
@@ -90,6 +96,23 @@ async function checked(query) {
   return result.data ?? [];
 }
 
+async function optionalChecked(query) {
+  const result = await query;
+  return result.error
+    ? { rows: [], error: result.error }
+    : { rows: result.data ?? [], error: null };
+}
+
+function containsUnmaskedPii(value) {
+  const text = String(value ?? "");
+  return (
+    /\b\d{16}\b/u.test(text) ||
+    /\b(?:\+62|62|0)8\d{7,11}\b/u.test(text) ||
+    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/iu.test(text) ||
+    /\b(?:nik|nomor[ _-]?kk|alamat|nomor[ _-]?(?:hp|telepon)|password|token|secret|authorization|cookie)\b/iu.test(text)
+  );
+}
+
 await loadProjectEnvironment();
 const { supabaseUrl, supabaseSecretKey } = getSupabaseAdminEnvironment();
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
@@ -135,7 +158,7 @@ const [
   checked(admin.from("dinsos_path_overrides").select("id,path_decision_id,assessment_id,old_path,new_path,created_at")),
   checked(admin.from("referral_mbi").select("id,case_id,warga_id,referral_type,target_opd_id,status,sent_at,referral_date,program_id,assessment_id,path_decision_id,jalur,received_at,processing_started_at,completed_at,metadata,is_fixture")),
   checked(admin.from("referral_mbi_events").select("id,referral_id,event_type,event_at,metadata")),
-  checked(admin.from("master_program_layanan").select("id,kode_program,opd_id,is_active")),
+  checked(admin.from("master_program_layanan").select("id,kode_program,opd_id,jalur,is_active")),
   checked(admin.from("dinsos_case_events").select("id,case_id,event_type,metadata,created_at")),
   checked(admin.from("log_aktivitas").select("id,metadata")),
   checked(admin.from("user_capabilities").select("user_id,capability")),
@@ -160,6 +183,10 @@ const privacyBlockers = [];
 const capabilityBlockers = [];
 const fixtureBlockers = [];
 const configurationBlockers = [];
+const disnakerDomainBlockers = [];
+const disnakerPrivacyBlockers = [];
+const disnakerFixtureBlockers = [];
+const disnakerConfigurationBlockers = [];
 const securityBlockers = [];
 const applicationBlockers = [];
 const deploymentBlockers = [
@@ -168,6 +195,51 @@ const deploymentBlockers = [
   "Login edge rate limiting untuk POST /api/auth/login belum tersedia.",
 ];
 const warnings = [];
+
+const disnakerSchemaQueries = {
+  disnaker_program_details: admin
+    .from("disnaker_program_details")
+    .select("program_id,lembaga_id,capacity"),
+  disnaker_interventions: admin
+    .from("disnaker_interventions")
+    .select("id,referral_id,program_id,lembaga_id,start_date,participant_status,attendance_percent,evaluation_note,is_fixture"),
+  disnaker_intervention_events: admin
+    .from("disnaker_intervention_events")
+    .select("id,intervention_id,event_type,attendance_percent,note,event_at"),
+  disnaker_lembaga_pelaksana: admin
+    .from("disnaker_lembaga_pelaksana")
+    .select("id,kode,nama,is_active"),
+  disnaker_mitra_industri: admin
+    .from("disnaker_mitra_industri")
+    .select("id,kode_mitra,nama_perusahaan,status_kemitraan"),
+  disnaker_penempatan_kerja: admin
+    .from("disnaker_penempatan_kerja")
+    .select("id,intervention_id,mitra_industri_id,tanggal_penempatan,status_pekerja,evaluasi_akhir"),
+};
+const disnakerSchemaResults = Object.fromEntries(
+  await Promise.all(
+    Object.entries(disnakerSchemaQueries).map(async ([table, query]) => [
+      table,
+      await optionalChecked(query),
+    ]),
+  ),
+);
+const unavailableDisnakerTables = new Set();
+for (const [table, result] of Object.entries(disnakerSchemaResults)) {
+  if (result.error) {
+    unavailableDisnakerTables.add(table);
+    disnakerDomainBlockers.push(
+      `Hosted schema ${table} unavailable (${result.error.code ?? "QUERY_ERROR"})`,
+    );
+  }
+}
+
+const disnakerProgramDetails = disnakerSchemaResults.disnaker_program_details.rows;
+const disnakerInterventions = disnakerSchemaResults.disnaker_interventions.rows;
+const disnakerInterventionEvents = disnakerSchemaResults.disnaker_intervention_events.rows;
+const disnakerProviders = disnakerSchemaResults.disnaker_lembaga_pelaksana.rows;
+const disnakerPartners = disnakerSchemaResults.disnaker_mitra_industri.rows;
+const disnakerPlacements = disnakerSchemaResults.disnaker_penempatan_kerja.rows;
 
 const caseById = new Map(cases.map((row) => [row.id, row]));
 const structuredByCase = new Map(structuredAssessments.map((row) => [row.case_id, row]));
@@ -346,11 +418,238 @@ for (const [table, rows] of [
 
 const opdById = new Map(opds.map((row) => [row.id, row.kode_opd]));
 const profileById = new Map(profiles.map((row) => [row.id, row]));
+
+const disnakerDetailsByProgram = new Map(
+  disnakerProgramDetails.map((row) => [row.program_id, row]),
+);
+const disnakerProviderById = new Map(
+  disnakerProviders.map((row) => [row.id, row]),
+);
+const disnakerPartnerById = new Map(
+  disnakerPartners.map((row) => [row.id, row]),
+);
+const disnakerInterventionById = new Map(
+  disnakerInterventions.map((row) => [row.id, row]),
+);
+const disnakerInterventionByReferral = new Map(
+  disnakerInterventions.map((row) => [row.referral_id, row]),
+);
+const disnakerPlacementByIntervention = new Map();
+for (const placement of disnakerPlacements) {
+  const list = disnakerPlacementByIntervention.get(placement.intervention_id) ?? [];
+  list.push(placement);
+  disnakerPlacementByIntervention.set(placement.intervention_id, list);
+}
+const disnakerEventsByIntervention = new Map();
+for (const event of disnakerInterventionEvents) {
+  const list = disnakerEventsByIntervention.get(event.intervention_id) ?? [];
+  list.push(event);
+  disnakerEventsByIntervention.set(event.intervention_id, list);
+}
+
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Orphan Disnaker program detail",
+  disnakerProgramDetails.filter((row) => !programById.has(row.program_id)),
+);
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Invalid Disnaker program provider",
+  disnakerProgramDetails.filter(
+    (row) => !row.lembaga_id || !disnakerProviderById.has(row.lembaga_id),
+  ),
+);
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Invalid Disnaker intervention relationship",
+  disnakerInterventions.filter((intervention) => {
+    const referral = referrals.find((row) => row.id === intervention.referral_id);
+    const program = programById.get(intervention.program_id);
+    const detail = disnakerDetailsByProgram.get(intervention.program_id);
+    return (
+      !referral ||
+      referral.referral_type !== "JALUR_MBI" ||
+      referral.jalur !== "PEKERJA" ||
+      opdById.get(referral.target_opd_id) !== "DISNAKER" ||
+      !program ||
+      opdById.get(program.opd_id) !== "DISNAKER" ||
+      program.jalur !== "PEKERJA" ||
+      !detail ||
+      !intervention.lembaga_id ||
+      intervention.lembaga_id !== detail.lembaga_id ||
+      !disnakerProviderById.has(intervention.lembaga_id)
+    );
+  }),
+);
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Invalid Disnaker placement relationship",
+  disnakerPlacements.filter((placement) => {
+    const intervention = disnakerInterventionById.get(placement.intervention_id);
+    return (
+      !intervention ||
+      !disnakerPartnerById.has(placement.mitra_industri_id) ||
+      placement.tanggal_penempatan < intervention.start_date
+    );
+  }),
+);
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Duplicate placement for intervention",
+  [...disnakerPlacementByIntervention.values()].filter((rows) => rows.length > 1),
+);
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Completed Disnaker intervention without exactly one placement",
+  disnakerInterventions.filter(
+    (row) =>
+      row.participant_status === "BEKERJA_SELESAI" &&
+      (disnakerPlacementByIntervention.get(row.id) ?? []).length !== 1,
+  ),
+);
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Completed Disnaker referral without completed intervention and placement",
+  referrals.filter((referral) => {
+    if (
+      referral.status !== "SELESAI" ||
+      referral.referral_type !== "JALUR_MBI" ||
+      referral.jalur !== "PEKERJA" ||
+      opdById.get(referral.target_opd_id) !== "DISNAKER"
+    ) {
+      return false;
+    }
+    const intervention = disnakerInterventionByReferral.get(referral.id);
+    return (
+      !intervention ||
+      intervention.participant_status !== "BEKERJA_SELESAI" ||
+      (disnakerPlacementByIntervention.get(intervention.id) ?? []).length !== 1
+    );
+  }),
+);
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Processing Disnaker referral without intervention",
+  referrals.filter(
+    (referral) =>
+      referral.status === "DIPROSES" &&
+      referral.referral_type === "JALUR_MBI" &&
+      referral.jalur === "PEKERJA" &&
+      opdById.get(referral.target_opd_id) === "DISNAKER" &&
+      !disnakerInterventionByReferral.has(referral.id),
+  ),
+);
+
+const disnakerParticipantsByProgram = new Map();
+for (const intervention of disnakerInterventions) {
+  if (intervention.participant_status === "TIDAK_AKTIF") continue;
+  disnakerParticipantsByProgram.set(
+    intervention.program_id,
+    (disnakerParticipantsByProgram.get(intervention.program_id) ?? 0) + 1,
+  );
+}
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Disnaker program over capacity",
+  disnakerProgramDetails.filter(
+    (detail) =>
+      (disnakerParticipantsByProgram.get(detail.program_id) ?? 0) > detail.capacity,
+  ),
+);
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Orphan Disnaker intervention event",
+  disnakerInterventionEvents.filter(
+    (event) => !disnakerInterventionById.has(event.intervention_id),
+  ),
+);
+addCountBlocker(
+  disnakerDomainBlockers,
+  "Invalid Disnaker intervention event chain",
+  disnakerInterventions.filter((intervention) => {
+    const events = disnakerEventsByIntervention.get(intervention.id) ?? [];
+    const started = events.filter((event) => event.event_type === "STARTED");
+    const completed = events.filter((event) => event.event_type === "COMPLETED");
+    if (started.length !== 1) return true;
+    if (intervention.participant_status === "BEKERJA_SELESAI") {
+      if (completed.length !== 1) return true;
+    } else if (completed.length !== 0) {
+      return true;
+    }
+    const startedAt = new Date(started[0].event_at).getTime();
+    if (events.some((event) => new Date(event.event_at).getTime() < startedAt)) {
+      return true;
+    }
+    if (completed.length === 1) {
+      const completedAt = new Date(completed[0].event_at).getTime();
+      if (events.some((event) => new Date(event.event_at).getTime() > completedAt)) {
+        return true;
+      }
+    }
+    return false;
+  }),
+);
+
+for (const [table, rows, fields] of [
+  ["disnaker_intervention_events", disnakerInterventionEvents, ["note"]],
+  ["disnaker_interventions", disnakerInterventions, ["evaluation_note"]],
+  ["disnaker_penempatan_kerja", disnakerPlacements, ["evaluasi_akhir"]],
+]) {
+  for (const row of rows) {
+    for (const field of fields) {
+      if (containsUnmaskedPii(row[field])) {
+        disnakerPrivacyBlockers.push(`${table}:${row.id}.${field}`);
+      }
+    }
+  }
+}
+
 for (const capability of capabilities.filter((row) => row.capability.startsWith("DINSOS_"))) {
   const profile = profileById.get(capability.user_id);
   if (!profile || profile.status !== "AKTIF" || profile.role !== "INTERVENSI" || opdById.get(profile.opd_id) !== "DINSOS") {
     capabilityBlockers.push(`Capability ${capability.capability} assigned outside active DINSOS actor`);
   }
+}
+
+const disnakerAdmin = profiles.find((row) => row.username === "admin.disnaker");
+if (
+  !disnakerAdmin ||
+  !disnakerAdmin.auth_user_id ||
+  disnakerAdmin.status !== "AKTIF" ||
+  disnakerAdmin.role !== "INTERVENSI" ||
+  opdById.get(disnakerAdmin.opd_id) !== "DISNAKER"
+) {
+  disnakerConfigurationBlockers.push(
+    "Admin Disnaker is not active, auth-linked, and assigned to DISNAKER",
+  );
+}
+
+addCountBlocker(
+  disnakerFixtureBlockers,
+  "DEV Disnaker providers remaining",
+  disnakerProviders.filter((row) => row.kode.startsWith("DEV-")),
+);
+addCountBlocker(
+  disnakerFixtureBlockers,
+  "DEV Disnaker partners remaining",
+  disnakerPartners.filter((row) => row.kode_mitra.startsWith("DEV-")),
+);
+addCountBlocker(
+  disnakerFixtureBlockers,
+  "Disnaker interventions fixture remaining",
+  disnakerInterventions.filter((row) => row.is_fixture),
+);
+addCountBlocker(
+  disnakerFixtureBlockers,
+  "Disnaker placements fixture remaining",
+  disnakerPlacements.filter((placement) =>
+    disnakerInterventionById.get(placement.intervention_id)?.is_fixture,
+  ),
+);
+if (process.env.DISNAKER_PREVIEW_MODE === "true") {
+  disnakerConfigurationBlockers.push(
+    "DISNAKER_PREVIEW_MODE=true is forbidden for readiness/production",
+  );
 }
 const dinsosAdmin = profiles.find((row) => row.email === "dinsos@bandung.go.id");
 if (!dinsosAdmin || !dinsosAdmin.auth_user_id || dinsosAdmin.status !== "AKTIF" || dinsosAdmin.role !== "INTERVENSI" || opdById.get(dinsosAdmin.opd_id) !== "DINSOS") {
@@ -388,28 +687,89 @@ if (!publishableKey) {
   securityBlockers.push("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing");
 } else {
   const anonHeaders = { apikey: publishableKey };
-  const browser = createClient(supabaseUrl, publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const browserLogin = await browser.auth.signInWithPassword({
+  const dinsosBrowser = createClient(supabaseUrl, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const dinsosBrowserLogin = await dinsosBrowser.auth.signInWithPassword({
     email: process.env.DINSOS_ADMIN_EMAIL ?? "dinsos@bandung.go.id",
     password: process.env.DINSOS_ADMIN_PASSWORD ?? process.env.E2E_DINSOS_PASSWORD ?? "",
   });
-  if (browserLogin.error || !browserLogin.data.session) securityBlockers.push("Authenticated Dinsos RLS audit login failed");
-  const authenticatedHeaders = browserLogin.data.session ? { apikey: publishableKey, Authorization: `Bearer ${browserLogin.data.session.access_token}` } : null;
+  if (dinsosBrowserLogin.error || !dinsosBrowserLogin.data.session) {
+    securityBlockers.push("Authenticated Dinsos RLS audit login failed");
+  }
+
+  const disnakerBrowser = createClient(supabaseUrl, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const disnakerProfile = profiles.find((row) => row.username === "admin.disnaker");
+  const disnakerBrowserLogin = await disnakerBrowser.auth.signInWithPassword({
+    email: disnakerProfile?.email ?? "",
+    password:
+      process.env.DISNAKER_ADMIN_PASSWORD ??
+      process.env.E2E_DISNAKER_PASSWORD ??
+      "",
+  });
+  if (disnakerBrowserLogin.error || !disnakerBrowserLogin.data.session) {
+    securityBlockers.push("Authenticated Disnaker RLS audit login failed");
+  }
+
+  const browserActors = [
+    ["anon", anonHeaders],
+    [
+      "authenticated-dinsos",
+      dinsosBrowserLogin.data.session
+        ? {
+            apikey: publishableKey,
+            Authorization: `Bearer ${dinsosBrowserLogin.data.session.access_token}`,
+          }
+        : null,
+    ],
+    [
+      "authenticated-disnaker",
+      disnakerBrowserLogin.data.session
+        ? {
+            apikey: publishableKey,
+            Authorization: `Bearer ${disnakerBrowserLogin.data.session.access_token}`,
+          }
+        : null,
+    ],
+  ];
   for (const table of BROWSER_DENIED_TABLES) {
-    for (const [actor, headers] of [["anon", anonHeaders], ["authenticated", authenticatedHeaders]]) {
+    if (unavailableDisnakerTables.has(table)) continue;
+    for (const [actor, headers] of browserActors) {
       if (!headers) continue;
       const response = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*&limit=1`, { headers });
       if (![401, 403].includes(response.status)) readable.push(`${actor}:${table}:${response.status}`);
     }
   }
-  await browser.auth.signOut({ scope: "local" });
+  await Promise.all([
+    dinsosBrowser.auth.signOut({ scope: "local" }),
+    disnakerBrowser.auth.signOut({ scope: "local" }),
+  ]);
 }
-if (readable.length) securityBlockers.push(`Browser-readable Dinsos table: ${readable.join(", ")}`);
+if (readable.length) {
+  securityBlockers.push(`Browser-readable protected table: ${readable.join(", ")}`);
+}
+if (unavailableDisnakerTables.size) {
+  securityBlockers.push(
+    "Disnaker RLS audit is blocked until the hosted schema migrations are applied",
+  );
+}
 
 if (!process.env.APP_ORIGIN || process.env.APP_ORIGIN.includes("localhost")) deploymentBlockers.push("APP_ORIGIN belum memakai domain HTTPS production yang exact.");
 if (productionPrograms === 0) {
   warnings.push("Master program production = 0");
   deploymentBlockers.push("PRODUCTION MASTER PROGRAM = 0");
+}
+const disnakerProductionPrograms = programs.filter(
+  (program) =>
+    opdById.get(program.opd_id) === "DISNAKER" &&
+    program.jalur === "PEKERJA" &&
+    !program.kode_program.startsWith("DEV-"),
+);
+if (disnakerProductionPrograms.length === 0) {
+  warnings.push("Disnaker master program production = 0");
+  deploymentBlockers.push("DISNAKER PRODUCTION MASTER PROGRAM = 0");
 }
 if (unresolvedWarga) warnings.push(`${unresolvedWarga} warga unresolved`);
 if (legacyUsers) warnings.push(`${legacyUsers} legacy users tanpa identifier`);
@@ -418,13 +778,28 @@ if (openCriticalAlerts) warnings.push(`${openCriticalAlerts} open critical syste
 if (integrations.every((row) => !row.endpoint_url)) warnings.push("Official integration endpoints absent");
 if (untestedIntegrations) warnings.push(`${untestedIntegrations} integrasi belum dites`);
 
-applicationBlockers.push(...domainBlockers, ...privacyBlockers, ...capabilityBlockers, ...fixtureBlockers, ...configurationBlockers, ...securityBlockers);
+applicationBlockers.push(
+  ...domainBlockers,
+  ...privacyBlockers,
+  ...capabilityBlockers,
+  ...fixtureBlockers,
+  ...configurationBlockers,
+  ...disnakerDomainBlockers,
+  ...disnakerPrivacyBlockers,
+  ...disnakerFixtureBlockers,
+  ...disnakerConfigurationBlockers,
+  ...securityBlockers,
+);
 
 printSection("DINSOS DOMAIN INTEGRITY", domainBlockers);
 printSection("DINSOS PRIVACY", privacyBlockers);
 printSection("DINSOS CAPABILITIES", capabilityBlockers);
 printSection("DINSOS FIXTURES", fixtureBlockers);
 printSection("DINSOS CONFIGURATION", configurationBlockers);
+printSection("DISNAKER DOMAIN INTEGRITY", disnakerDomainBlockers);
+printSection("DISNAKER PRIVACY", disnakerPrivacyBlockers);
+printSection("DISNAKER FIXTURES", disnakerFixtureBlockers);
+printSection("DISNAKER CONFIGURATION", disnakerConfigurationBlockers);
 printSection("SECURITY BLOCKERS", securityBlockers, "0");
 printSection("APPLICATION BLOCKERS", applicationBlockers, "0");
 printSection("WARNINGS", warnings, "NONE");
@@ -432,8 +807,9 @@ printSection("DEPLOYMENT BLOCKERS", deploymentBlockers, "0");
 console.log("READINESS COUNTS");
 console.log(`- APPLICATION BLOCKERS: ${applicationBlockers.length}`);
 console.log(`- DINSOS DOMAIN BLOCKERS: ${domainBlockers.length}`);
+console.log(`- DISNAKER DOMAIN BLOCKERS: ${disnakerDomainBlockers.length}`);
 console.log(`- SECURITY BLOCKERS: ${securityBlockers.length}`);
-console.log(`- PRIVACY BLOCKERS: ${privacyBlockers.length}`);
-console.log(`- FIXTURE BLOCKERS: ${fixtureBlockers.length}`);
+console.log(`- PRIVACY BLOCKERS: ${privacyBlockers.length + disnakerPrivacyBlockers.length}`);
+console.log(`- FIXTURE BLOCKERS: ${fixtureBlockers.length + disnakerFixtureBlockers.length}`);
 
 if (applicationBlockers.length) process.exitCode = 1;

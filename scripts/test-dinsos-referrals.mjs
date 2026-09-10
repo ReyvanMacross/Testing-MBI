@@ -62,7 +62,7 @@ try {
     const found = await admin.rpc("list_dinsos_referrals", { p_search: search, p_limit: 3, p_offset: 0 });
     assert.ifError(found.error); assert.ok(found.data.some((row) => row.referral_id === fixture.waiting.referralId));
   }
-  for (const params of [{ p_path: "PEKERJA" }, { p_status: "DIPROSES" }]) {
+  for (const params of [{ p_path: "WIRAUSAHA" }, { p_status: "DIPROSES" }]) {
     const filtered = await admin.rpc("list_dinsos_referrals", { ...params, p_limit: 3, p_offset: 0 });
     assert.ifError(filtered.error); assert.ok(filtered.data.length > 0);
   }
