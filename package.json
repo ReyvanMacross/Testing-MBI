@@ -71,8 +71,21 @@
     "verify:disdik-source": "npm run test:disdik-contract && npm run audit:disdik-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build",
     "audit:integration": "node scripts/audit-mbi-integration.mjs",
     "test:e2e:integration": "playwright test tests/e2e/mbi-integration.spec.ts",
-    "verify:integration-source": "npm run audit:integration && npm run test:disdik-contract && npm run audit:dinsos-api-guards && npm run audit:disnaker-api-guards && npm run audit:diskop-api-guards && npm run audit:disdik-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build",
-    "verify:integration-hosted": "npm run test:dinsos && npm run test:dinsos-warga && npm run test:dinsos-assessments && npm run test:dinsos-paths && npm run test:dinsos-referrals && npm run test:dinsos-concurrency && npm run test:disnaker && npm run test:disnaker-concurrency && npm run test:diskop && npm run test:diskop-concurrency && npm run test:disdik && npm run test:disdik-concurrency && npm run test:e2e:integration && npm run audit:readiness"
+    "verify:integration-source": "npm run audit:integration && npm run test:disdik-contract && npm run test:kecamatan-contract && npm run audit:dinsos-api-guards && npm run audit:disnaker-api-guards && npm run audit:diskop-api-guards && npm run audit:disdik-api-guards && npm run audit:kecamatan-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build",
+    "verify:integration-hosted": "npm run test:dinsos && npm run test:dinsos-warga && npm run test:dinsos-assessments && npm run test:dinsos-paths && npm run test:dinsos-referrals && npm run test:dinsos-concurrency && npm run test:disnaker && npm run test:disnaker-concurrency && npm run test:diskop && npm run test:diskop-concurrency && npm run test:disdik && npm run test:disdik-concurrency && npm run test:kecamatan && npm run test:kecamatan-concurrency && npm run test:e2e:integration && npm run test:e2e:kecamatan && npm run audit:readiness",
+    "test:kecamatan-contract": "node scripts/test-kecamatan-contract.mjs",
+    "audit:kecamatan-api-guards": "node scripts/audit-kecamatan-api-guards.mjs",
+    "verify:kecamatan-source": "npm run test:kecamatan-contract && npm run audit:kecamatan-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build",
+    "staging:apply-kecamatan": "node scripts/apply-kecamatan-migrations.mjs",
+    "staging:audit-kecamatan": "node scripts/audit-kecamatan-staging.mjs",
+    "staging:audit-integration": "node scripts/audit-integration-staging.mjs",
+    "onboard:kecamatan": "node scripts/dev/onboard-kecamatan-admin.mjs",
+    "dev:seed-kecamatan": "node scripts/dev/seed-kecamatan-fixtures.mjs",
+    "dev:cleanup-kecamatan": "node scripts/dev/cleanup-kecamatan-fixtures.mjs",
+    "test:kecamatan": "node scripts/test-kecamatan-workflow.mjs",
+    "test:kecamatan-concurrency": "node scripts/test-kecamatan-concurrency.mjs",
+    "test:e2e:kecamatan": "playwright test tests/e2e/kecamatan.spec.ts",
+    "verify:kecamatan-hosted": "npm run staging:audit-kecamatan && npm run test:kecamatan && npm run test:kecamatan-concurrency && npm run test:e2e:kecamatan && npm run staging:audit-kecamatan"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",

@@ -14,6 +14,11 @@ export const USER_ROLE_RULES = {
     requiresWilayah: true,
     allowedWilayahTypes: ["KELURAHAN"],
   },
+  "Operator Kecamatan": {
+    label: "Admin Kecamatan",
+    requiresWilayah: true,
+    allowedWilayahTypes: ["KECAMATAN"],
+  },
 } as const;
 
 export type ManagedUserRole = keyof typeof USER_ROLE_RULES;

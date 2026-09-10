@@ -105,7 +105,7 @@ export async function validateUserAssignment(
       !(rule.allowedWilayahTypes as readonly string[]).includes(wilayah.jenis)
     ) {
       throw new UserValidationError(
-        role === "Operator Lapangan"
+        role === "Operator Lapangan" || role === "Operator Kecamatan"
           ? "Operator Lapangan harus ditugaskan ke kecamatan."
           : "Operator Kelurahan harus ditugaskan ke kelurahan.",
       );
