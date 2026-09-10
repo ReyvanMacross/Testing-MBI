@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { client } from "./dinsos-fixture-lib.mjs";
@@ -11,25 +11,46 @@ const stateFile = path.join(
   "assessment-fixture-state.json",
 );
 
+async function readState() {
+  try {
+    return JSON.parse(await readFile(stateFile, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function persistState(state) {
+  await mkdir(path.dirname(stateFile), { recursive: true });
+  await writeFile(stateFile, JSON.stringify(state, null, 2));
+}
+
 export async function cleanupDinsosAssessmentFixtures() {
   const db = await client();
-  const { data, error } = await db
+  const state = await readState();
+  const { data: tagged, error } = await db
     .from("dinsos_assessments")
     .select("id")
-    .eq("is_fixture", true);
+    .eq("is_fixture", true)
+    .like("observation", "Observasi fixture lokal untuk %");
   if (error) throw error;
-  if ((data ?? []).length > 30) {
-    throw new Error(`Fixture cleanup guard: found ${data.length} assessments.`);
+  const assessmentIds = [...new Set([
+    ...(tagged ?? []).map((row) => row.id),
+    ...Object.values(state ?? {}).map((row) => row?.id).filter(Boolean),
+  ])];
+  if (assessmentIds.length > 4) {
+    throw new Error(`Fixture cleanup guard: found ${assessmentIds.length} exact assessments.`);
   }
-  if (data?.length) {
+  if (assessmentIds.length) {
     const { error: deleteError } = await db
       .from("dinsos_assessments")
       .delete()
-      .in("id", data.map((row) => row.id));
+      .in("id", assessmentIds)
+      .eq("is_fixture", true);
     if (deleteError) throw deleteError;
   }
   await rm(stateFile, { force: true });
-  return data?.length ?? 0;
+  return assessmentIds.length;
 }
 
 export async function seedDinsosAssessmentFixtures() {
@@ -79,6 +100,7 @@ export async function seedDinsosAssessmentFixtures() {
       .single();
     if (error) throw error;
     state[definition.key] = assessment;
+    await persistState(state);
     if (definition.decision) {
       const { error: reviewError } = await db.from("dinsos_assessment_reviews").insert({
         assessment_id: assessment.id,
@@ -94,7 +116,6 @@ export async function seedDinsosAssessmentFixtures() {
       if (reviewError) throw reviewError;
     }
   }
-  await mkdir(path.dirname(stateFile), { recursive: true });
-  await writeFile(stateFile, JSON.stringify(state, null, 2));
+  await persistState(state);
   return state;
 }
