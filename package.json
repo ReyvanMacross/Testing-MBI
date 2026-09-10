@@ -68,7 +68,11 @@
     "dev:cleanup-disdik": "node scripts/dev/cleanup-disdik-fixtures.mjs",
     "test:disdik": "node scripts/test-disdik-workflow.mjs",
     "test:disdik-concurrency": "node scripts/test-disdik-concurrency.mjs",
-    "verify:disdik-source": "npm run test:disdik-contract && npm run audit:disdik-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build"
+    "verify:disdik-source": "npm run test:disdik-contract && npm run audit:disdik-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build",
+    "audit:integration": "node scripts/audit-mbi-integration.mjs",
+    "test:e2e:integration": "playwright test tests/e2e/mbi-integration.spec.ts",
+    "verify:integration-source": "npm run audit:integration && npm run test:disdik-contract && npm run audit:dinsos-api-guards && npm run audit:disnaker-api-guards && npm run audit:diskop-api-guards && npm run audit:disdik-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build",
+    "verify:integration-hosted": "npm run test:dinsos && npm run test:dinsos-warga && npm run test:dinsos-assessments && npm run test:dinsos-paths && npm run test:dinsos-referrals && npm run test:dinsos-concurrency && npm run test:disnaker && npm run test:disnaker-concurrency && npm run test:diskop && npm run test:diskop-concurrency && npm run test:disdik && npm run test:disdik-concurrency && npm run test:e2e:integration && npm run audit:readiness"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",

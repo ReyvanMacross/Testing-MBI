@@ -1,12 +1,22 @@
 name: Verify
 
 on:
+  workflow_dispatch:
+    inputs:
+      run_hosted_staging:
+        description: Jalankan validasi hosted staging
+        required: true
+        default: false
+        type: boolean
   pull_request:
   push:
     branches:
       - main
       - dinsos
       - disnaker
+      - feat/diskop-ukm-mvp
+      - feat/disdik-mvp
+      - integration/**
 
 permissions:
   contents: read
@@ -15,8 +25,18 @@ jobs:
   static-verification:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://ci.example.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-publishable-placeholder
+      SUPABASE_SECRET_KEY: ci-placeholder
+      APP_ORIGIN: http://localhost:3000
+      DISNAKER_PREVIEW_MODE: "false"
+      DISKOP_PREVIEW_MODE: "false"
+      DISDIK_PREVIEW_MODE: "false"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -26,7 +46,48 @@ jobs:
       - run: npm run build
       - run: npm audit --omit=dev
       - run: npm run test-migration-chain
+      - run: npm run audit:integration
+      - run: npm run test:disdik-contract
       - run: npm run scan:pii
       - run: npm run scan:secrets
       - run: npm run audit:dinsos-api-guards
       - run: npm run audit:disnaker-api-guards
+      - run: npm run audit:diskop-api-guards
+      - run: npm run audit:disdik-api-guards
+
+  hosted-staging-verification:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_hosted_staging }}
+    needs: static-verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: staging
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      APP_ORIGIN: http://localhost:3000
+      DISNAKER_PREVIEW_MODE: "false"
+      DISKOP_PREVIEW_MODE: "false"
+      DISDIK_PREVIEW_MODE: "false"
+      E2E_ADMIN_IDENTIFIER: ${{ secrets.E2E_ADMIN_IDENTIFIER }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_DINSOS_IDENTIFIER: ${{ secrets.E2E_DINSOS_IDENTIFIER }}
+      E2E_DINSOS_PASSWORD: ${{ secrets.E2E_DINSOS_PASSWORD }}
+      E2E_DISNAKER_IDENTIFIER: ${{ secrets.E2E_DISNAKER_IDENTIFIER }}
+      E2E_DISNAKER_PASSWORD: ${{ secrets.E2E_DISNAKER_PASSWORD }}
+      E2E_DISKOP_IDENTIFIER: ${{ secrets.E2E_DISKOP_IDENTIFIER }}
+      E2E_DISKOP_PASSWORD: ${{ secrets.E2E_DISKOP_PASSWORD }}
+      E2E_DISDIK_IDENTIFIER: ${{ secrets.E2E_DISDIK_IDENTIFIER }}
+      E2E_DISDIK_PASSWORD: ${{ secrets.E2E_DISDIK_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run verify:integration-hosted

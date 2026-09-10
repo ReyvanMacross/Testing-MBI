@@ -28,17 +28,19 @@ function loadEnvironmentFile(file: string) {
 loadEnvironmentFile(".env.test.local");
 loadEnvironmentFile(".env.local");
 
+const baseURL = process.env.MBI_TEST_BASE_URL ?? "http://localhost:3000";
+
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 60_000,
   workers: 1,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL,
     trace: "retain-on-failure",
   },
   webServer: {
     command: "npm run start",
-    url: "http://localhost:3000/login",
+    url: `${baseURL}/login`,
     reuseExistingServer: true,
     timeout: 120_000,
   },

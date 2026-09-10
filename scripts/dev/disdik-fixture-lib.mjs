@@ -16,6 +16,9 @@ export const DEV_DISDIK_CODES = {
   ],
 };
 
+const DEMO_DISDIK_PROGRAM_PATTERN = "DEMO-DISDIK-%";
+const DEMO_DISDIK_SCHOOL_PATTERN = "DEMO-SCH-DISDIK-%";
+
 const stateFile = path.join(PROJECT_ROOT, "artifacts", "disdik", "fixture-state.json");
 
 async function persistState(state) {
@@ -46,10 +49,15 @@ export async function cleanupDisdikFixtures() {
   const programResult = await db.from("master_program_layanan")
     .select("id").in("kode_program", DEV_DISDIK_CODES.programs);
   if (programResult.error) throw programResult.error;
+  const demoProgramResult = await db.from("master_program_layanan")
+    .select("id").like("kode_program", DEMO_DISDIK_PROGRAM_PATTERN);
+  if (demoProgramResult.error) throw demoProgramResult.error;
   const programIds = [...new Set([
     ...(programResult.data ?? []).map((row) => row.id),
+    ...(demoProgramResult.data ?? []).map((row) => row.id),
     ...Object.values(saved?.programs ?? {}).map((row) => row.id).filter(Boolean),
   ])];
+  if (programIds.length > 30) throw new Error(`Fixture cleanup guard: ${programIds.length} program ditemukan.`);
   const referralResult = programIds.length
     ? await db.from("referral_mbi").select("id,case_id,assessment_id,path_decision_id")
       .in("program_id", programIds).eq("is_fixture", true)
@@ -89,13 +97,17 @@ export async function cleanupDisdikFixtures() {
   }
   const schoolResult = await db.from("disdik_sekolah").delete().in("kode", DEV_DISDIK_CODES.schools);
   if (schoolResult.error) throw schoolResult.error;
+  const demoSchoolResult = await db.from("disdik_sekolah").delete().like("kode", DEMO_DISDIK_SCHOOL_PATTERN);
+  if (demoSchoolResult.error) throw demoSchoolResult.error;
 
-  const [remainingPrograms, remainingSchools, remainingInterventions] = await Promise.all([
+  const [remainingPrograms, remainingDemoPrograms, remainingSchools, remainingDemoSchools, remainingInterventions] = await Promise.all([
     db.from("master_program_layanan").select("id", { count: "exact", head: true }).in("kode_program", DEV_DISDIK_CODES.programs),
+    db.from("master_program_layanan").select("id", { count: "exact", head: true }).like("kode_program", DEMO_DISDIK_PROGRAM_PATTERN),
     db.from("disdik_sekolah").select("id", { count: "exact", head: true }).in("kode", DEV_DISDIK_CODES.schools),
+    db.from("disdik_sekolah").select("id", { count: "exact", head: true }).like("kode", DEMO_DISDIK_SCHOOL_PATTERN),
     db.from("disdik_interventions").select("id", { count: "exact", head: true }).eq("is_fixture", true),
   ]);
-  for (const result of [remainingPrograms, remainingSchools, remainingInterventions]) {
+  for (const result of [remainingPrograms, remainingDemoPrograms, remainingSchools, remainingDemoSchools, remainingInterventions]) {
     if (result.error) throw result.error;
     if (result.count !== 0) throw new Error(`Fixture cleanup gagal; ${result.count} row masih tersisa.`);
   }
