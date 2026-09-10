@@ -28,7 +28,7 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://ci.example.invalid
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-publishable-placeholder
-      SUPABASE_SECRET_KEY: ci-placeholder
+      SUPABASE_SECRET_KEY: ci
       APP_ORIGIN: http://localhost:3000
       DISNAKER_PREVIEW_MODE: "false"
       DISKOP_PREVIEW_MODE: "false"
