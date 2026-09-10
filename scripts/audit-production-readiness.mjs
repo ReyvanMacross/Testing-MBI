@@ -38,6 +38,11 @@ const BROWSER_DENIED_TABLES = [
   "diskop_intervention_events",
   "diskop_kemandirian_usaha",
   "diskop_laporan_omzet",
+  "disdik_sekolah",
+  "disdik_program_details",
+  "disdik_interventions",
+  "disdik_intervention_events",
+  "disdik_realisasi_bantuan",
 ];
 const TEST_PROFILE_IDS = [
   "3b6bf014-f8c7-48c8-ae72-0cb1e70e6b5c",
@@ -197,6 +202,10 @@ const diskopDomainBlockers = [];
 const diskopPrivacyBlockers = [];
 const diskopFixtureBlockers = [];
 const diskopConfigurationBlockers = [];
+const disdikDomainBlockers = [];
+const disdikPrivacyBlockers = [];
+const disdikFixtureBlockers = [];
+const disdikConfigurationBlockers = [];
 const securityBlockers = [];
 const applicationBlockers = [];
 const deploymentBlockers = [
@@ -275,6 +284,29 @@ const diskopInterventions = diskopSchemaResults.diskop_interventions.rows;
 const diskopEvents = diskopSchemaResults.diskop_intervention_events.rows;
 const diskopOutcomes = diskopSchemaResults.diskop_kemandirian_usaha.rows;
 const diskopRevenueReports = diskopSchemaResults.diskop_laporan_omzet.rows;
+
+const disdikSchemaQueries = {
+  disdik_sekolah: admin.from("disdik_sekolah").select("id,kode,nama,is_active"),
+  disdik_program_details: admin.from("disdik_program_details").select("program_id,sekolah_id,capacity,budget_per_student"),
+  disdik_interventions: admin.from("disdik_interventions").select("id,referral_id,program_id,sekolah_id,start_date,aid_status,document_status,progress_percent,planned_budget,evaluation_note,is_fixture"),
+  disdik_intervention_events: admin.from("disdik_intervention_events").select("id,intervention_id,event_type,note,event_at"),
+  disdik_realisasi_bantuan: admin.from("disdik_realisasi_bantuan").select("id,intervention_id,realized_amount,disbursement_date,notes"),
+};
+const disdikSchemaResults = Object.fromEntries(await Promise.all(
+  Object.entries(disdikSchemaQueries).map(async ([table, query]) => [table, await optionalChecked(query)]),
+));
+const unavailableDisdikTables = new Set();
+for (const [table, result] of Object.entries(disdikSchemaResults)) {
+  if (result.error) {
+    unavailableDisdikTables.add(table);
+    disdikDomainBlockers.push(`Hosted schema ${table} unavailable (${result.error.code ?? "QUERY_ERROR"})`);
+  }
+}
+const disdikSchools = disdikSchemaResults.disdik_sekolah.rows;
+const disdikProgramDetails = disdikSchemaResults.disdik_program_details.rows;
+const disdikInterventions = disdikSchemaResults.disdik_interventions.rows;
+const disdikEvents = disdikSchemaResults.disdik_intervention_events.rows;
+const disdikRealizations = disdikSchemaResults.disdik_realisasi_bantuan.rows;
 
 const caseById = new Map(cases.map((row) => [row.id, row]));
 const structuredByCase = new Map(structuredAssessments.map((row) => [row.case_id, row]));
@@ -720,6 +752,40 @@ addCountBlocker(diskopFixtureBlockers, "DEV Diskop mentors remaining", diskopMen
 addCountBlocker(diskopFixtureBlockers, "Diskop interventions fixture remaining", diskopInterventions.filter((row) => row.is_fixture));
 if (process.env.DISKOP_PREVIEW_MODE === "true") diskopConfigurationBlockers.push("DISKOP_PREVIEW_MODE=true is forbidden for readiness/production");
 
+const disdikSchoolById = new Map(disdikSchools.map((row) => [row.id, row]));
+const disdikDetailByProgram = new Map(disdikProgramDetails.map((row) => [row.program_id, row]));
+const disdikInterventionById = new Map(disdikInterventions.map((row) => [row.id, row]));
+const disdikRealizationByIntervention = new Map(disdikRealizations.map((row) => [row.intervention_id, row]));
+addCountBlocker(disdikDomainBlockers, "Invalid Disdik program link", disdikProgramDetails.filter((detail) => {
+  const program = programById.get(detail.program_id);
+  return !program || opdById.get(program.opd_id) !== "DISDIK" || program.jalur !== "PENGUATAN_DASAR" || !disdikSchoolById.has(detail.sekolah_id);
+}));
+addCountBlocker(disdikDomainBlockers, "Invalid Disdik intervention link", disdikInterventions.filter((intervention) => {
+  const referral = referrals.find((row) => row.id === intervention.referral_id);
+  const detail = disdikDetailByProgram.get(intervention.program_id);
+  return !referral || opdById.get(referral.target_opd_id) !== "DISDIK" || referral.jalur !== "PENGUATAN_DASAR" || referral.program_id !== intervention.program_id || !detail || detail.sekolah_id !== intervention.sekolah_id;
+}));
+addCountBlocker(disdikDomainBlockers, "Disdik completed intervention without realization", disdikInterventions.filter((row) => row.aid_status === "SELESAI" && !disdikRealizationByIntervention.has(row.id)));
+addCountBlocker(disdikDomainBlockers, "Orphan Disdik event", disdikEvents.filter((row) => !disdikInterventionById.has(row.intervention_id)));
+addCountBlocker(disdikDomainBlockers, "Orphan Disdik realization", disdikRealizations.filter((row) => !disdikInterventionById.has(row.intervention_id)));
+addCountBlocker(disdikDomainBlockers, "Disdik realization over budget", disdikRealizations.filter((row) => Number(row.realized_amount) > Number(disdikInterventionById.get(row.intervention_id)?.planned_budget ?? -1)));
+const disdikParticipantCounts = new Map();
+for (const row of disdikInterventions.filter((item) => item.aid_status !== "TIDAK_AKTIF")) disdikParticipantCounts.set(row.program_id, (disdikParticipantCounts.get(row.program_id) ?? 0) + 1);
+addCountBlocker(disdikDomainBlockers, "Disdik program over capacity", disdikProgramDetails.filter((row) => (disdikParticipantCounts.get(row.program_id) ?? 0) > row.capacity));
+for (const [table, rows, fields] of [
+  ["disdik_intervention_events", disdikEvents, ["note"]],
+  ["disdik_interventions", disdikInterventions, ["evaluation_note"]],
+  ["disdik_realisasi_bantuan", disdikRealizations, ["notes"]],
+]) for (const row of rows) for (const field of fields) if (containsUnmaskedPii(row[field])) disdikPrivacyBlockers.push(`${table}:${row.id}.${field}`);
+
+const disdikAdmin = profiles.find((row) => row.username === "admin.disdik");
+if (!disdikAdmin || !disdikAdmin.auth_user_id || disdikAdmin.status !== "AKTIF" || disdikAdmin.role !== "INTERVENSI" || opdById.get(disdikAdmin.opd_id) !== "DISDIK") {
+  disdikConfigurationBlockers.push("Admin Disdik is not active, auth-linked, and assigned to DISDIK");
+}
+addCountBlocker(disdikFixtureBlockers, "DEV Disdik schools remaining", disdikSchools.filter((row) => row.kode.startsWith("DEV-")));
+addCountBlocker(disdikFixtureBlockers, "Disdik interventions fixture remaining", disdikInterventions.filter((row) => row.is_fixture));
+if (process.env.DISDIK_PREVIEW_MODE === "true") disdikConfigurationBlockers.push("DISDIK_PREVIEW_MODE=true is forbidden for readiness/production");
+
 const dinsosAdmin = profiles.find((row) => row.email === "dinsos@bandung.go.id");
 if (!dinsosAdmin || !dinsosAdmin.auth_user_id || dinsosAdmin.status !== "AKTIF" || dinsosAdmin.role !== "INTERVENSI" || opdById.get(dinsosAdmin.opd_id) !== "DINSOS") {
   capabilityBlockers.push("Admin Dinsos is not active, linked, and assigned to DINSOS");
@@ -792,6 +858,16 @@ if (!publishableKey) {
   }) : { data: { session: null }, error: null };
   if (diskopProfile && (diskopBrowserLogin.error || !diskopBrowserLogin.data.session)) securityBlockers.push("Authenticated Diskop RLS audit login failed");
 
+  const disdikBrowser = createClient(supabaseUrl, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const disdikProfile = profiles.find((row) => row.username === "admin.disdik");
+  const disdikBrowserLogin = disdikProfile ? await disdikBrowser.auth.signInWithPassword({
+    email: disdikProfile.email ?? "",
+    password: process.env.DISDIK_ADMIN_PASSWORD ?? process.env.E2E_DISDIK_PASSWORD ?? "",
+  }) : { data: { session: null }, error: null };
+  if (disdikProfile && (disdikBrowserLogin.error || !disdikBrowserLogin.data.session)) securityBlockers.push("Authenticated Disdik RLS audit login failed");
+
   const browserActors = [
     ["anon", anonHeaders],
     [
@@ -818,9 +894,15 @@ if (!publishableKey) {
         ? { apikey: publishableKey, Authorization: `Bearer ${diskopBrowserLogin.data.session.access_token}` }
         : null,
     ],
+    [
+      "authenticated-disdik",
+      disdikBrowserLogin.data.session
+        ? { apikey: publishableKey, Authorization: `Bearer ${disdikBrowserLogin.data.session.access_token}` }
+        : null,
+    ],
   ];
   for (const table of BROWSER_DENIED_TABLES) {
-    if (unavailableDisnakerTables.has(table) || unavailableDiskopTables.has(table)) continue;
+    if (unavailableDisnakerTables.has(table) || unavailableDiskopTables.has(table) || unavailableDisdikTables.has(table)) continue;
     for (const [actor, headers] of browserActors) {
       if (!headers) continue;
       const response = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*&limit=1`, { headers });
@@ -831,6 +913,7 @@ if (!publishableKey) {
     dinsosBrowser.auth.signOut({ scope: "local" }),
     disnakerBrowser.auth.signOut({ scope: "local" }),
     diskopBrowser.auth.signOut({ scope: "local" }),
+    disdikBrowser.auth.signOut({ scope: "local" }),
   ]);
 }
 if (readable.length) {
@@ -842,6 +925,7 @@ if (unavailableDisnakerTables.size) {
   );
 }
 if (unavailableDiskopTables.size) securityBlockers.push("Diskop RLS audit is blocked until the hosted schema migrations are applied");
+if (unavailableDisdikTables.size) securityBlockers.push("Disdik RLS audit is blocked until the hosted schema migrations are applied");
 
 if (!process.env.APP_ORIGIN || process.env.APP_ORIGIN.includes("localhost")) deploymentBlockers.push("APP_ORIGIN belum memakai domain HTTPS production yang exact.");
 if (productionPrograms === 0) {
@@ -865,6 +949,13 @@ if (diskopProductionPrograms.length === 0) {
   warnings.push("Diskop master program production = 0");
   deploymentBlockers.push("DISKOP PRODUCTION MASTER PROGRAM = 0");
 }
+const disdikProductionPrograms = programs.filter(
+  (program) => opdById.get(program.opd_id) === "DISDIK" && program.jalur === "PENGUATAN_DASAR" && !program.kode_program.startsWith("DEV-"),
+);
+if (disdikProductionPrograms.length === 0) {
+  warnings.push("Disdik master program production = 0");
+  deploymentBlockers.push("DISDIK PRODUCTION MASTER PROGRAM = 0");
+}
 if (unresolvedWarga) warnings.push(`${unresolvedWarga} warga unresolved`);
 if (legacyUsers) warnings.push(`${legacyUsers} legacy users tanpa identifier`);
 warnings.push("Numeric readiness scoring policy belum disetujui");
@@ -886,6 +977,10 @@ applicationBlockers.push(
   ...diskopPrivacyBlockers,
   ...diskopFixtureBlockers,
   ...diskopConfigurationBlockers,
+  ...disdikDomainBlockers,
+  ...disdikPrivacyBlockers,
+  ...disdikFixtureBlockers,
+  ...disdikConfigurationBlockers,
   ...securityBlockers,
 );
 
@@ -902,6 +997,10 @@ printSection("DISKOP DOMAIN INTEGRITY", diskopDomainBlockers);
 printSection("DISKOP PRIVACY", diskopPrivacyBlockers);
 printSection("DISKOP FIXTURES", diskopFixtureBlockers);
 printSection("DISKOP CONFIGURATION", diskopConfigurationBlockers);
+printSection("DISDIK DOMAIN INTEGRITY", disdikDomainBlockers);
+printSection("DISDIK PRIVACY", disdikPrivacyBlockers);
+printSection("DISDIK FIXTURES", disdikFixtureBlockers);
+printSection("DISDIK CONFIGURATION", disdikConfigurationBlockers);
 printSection("SECURITY BLOCKERS", securityBlockers, "0");
 printSection("APPLICATION BLOCKERS", applicationBlockers, "0");
 printSection("WARNINGS", warnings, "NONE");
@@ -911,8 +1010,9 @@ console.log(`- APPLICATION BLOCKERS: ${applicationBlockers.length}`);
 console.log(`- DINSOS DOMAIN BLOCKERS: ${domainBlockers.length}`);
 console.log(`- DISNAKER DOMAIN BLOCKERS: ${disnakerDomainBlockers.length}`);
 console.log(`- DISKOP DOMAIN BLOCKERS: ${diskopDomainBlockers.length}`);
+console.log(`- DISDIK DOMAIN BLOCKERS: ${disdikDomainBlockers.length}`);
 console.log(`- SECURITY BLOCKERS: ${securityBlockers.length}`);
-console.log(`- PRIVACY BLOCKERS: ${privacyBlockers.length + disnakerPrivacyBlockers.length + diskopPrivacyBlockers.length}`);
-console.log(`- FIXTURE BLOCKERS: ${fixtureBlockers.length + disnakerFixtureBlockers.length + diskopFixtureBlockers.length}`);
+console.log(`- PRIVACY BLOCKERS: ${privacyBlockers.length + disnakerPrivacyBlockers.length + diskopPrivacyBlockers.length + disdikPrivacyBlockers.length}`);
+console.log(`- FIXTURE BLOCKERS: ${fixtureBlockers.length + disnakerFixtureBlockers.length + diskopFixtureBlockers.length + disdikFixtureBlockers.length}`);
 
 if (applicationBlockers.length) process.exitCode = 1;
