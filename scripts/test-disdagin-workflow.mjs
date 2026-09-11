@@ -12,6 +12,8 @@ const { supabaseUrl, supabaseSecretKey } = getSupabaseAdminEnvironment();
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 assert.ok(publishableKey, "Supabase publishable key wajib tersedia.");
 const admin = createClient(supabaseUrl, supabaseSecretKey, { auth: { persistSession: false, autoRefreshToken: false } });
+const disdaginIdentifier = process.env.E2E_DISDAGIN_IDENTIFIER || process.env.DISDAGIN_ADMIN_USERNAME || "admin.disdagin";
+const disdaginPassword = process.env.E2E_DISDAGIN_PASSWORD || process.env.DISDAGIN_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
 
 async function login(identifier, password) {
   assert.ok(identifier && password, `Credential ${identifier ?? "unknown"} wajib tersedia.`);
@@ -38,8 +40,8 @@ async function expectDirectDenied(table, headers) {
 }
 
 const disdaginCookie = await login(
-  process.env.E2E_DISDAGIN_IDENTIFIER,
-  process.env.E2E_DISDAGIN_PASSWORD,
+  disdaginIdentifier,
+  disdaginPassword,
 );
 const dinsosCookie = await login(
   process.env.E2E_DINSOS_IDENTIFIER ?? process.env.DINSOS_ADMIN_USERNAME,
@@ -174,7 +176,7 @@ try {
   const profile = await admin.from("user_profiles").select("email").eq("username", "admin.disdagin").single();
   assert.ifError(profile.error);
   const browser = createClient(supabaseUrl, publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const browserLogin = await browser.auth.signInWithPassword({ email: profile.data.email, password: process.env.E2E_DISDAGIN_PASSWORD });
+  const browserLogin = await browser.auth.signInWithPassword({ email: profile.data.email, password: disdaginPassword });
   assert.ifError(browserLogin.error);
   const anonHeaders = { apikey: publishableKey };
   const authHeaders = { apikey: publishableKey, Authorization: `Bearer ${browserLogin.data.session.access_token}` };

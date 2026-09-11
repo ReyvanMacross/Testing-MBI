@@ -10,12 +10,14 @@ const BASE_URL = process.env.MBI_TEST_BASE_URL ?? "http://localhost:3000";
 const ORIGIN = process.env.APP_ORIGIN ?? BASE_URL;
 const { supabaseUrl, supabaseSecretKey } = getSupabaseAdminEnvironment();
 const admin = createClient(supabaseUrl, supabaseSecretKey, { auth: { persistSession: false, autoRefreshToken: false } });
+const disdaginIdentifier = process.env.E2E_DISDAGIN_IDENTIFIER || process.env.DISDAGIN_ADMIN_USERNAME || "admin.disdagin";
+const disdaginPassword = process.env.E2E_DISDAGIN_PASSWORD || process.env.DISDAGIN_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
 
 async function login() {
   const response = await fetch(`${BASE_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Origin: ORIGIN, "Sec-Fetch-Site": "same-origin" },
-    body: JSON.stringify({ identifier: process.env.E2E_DISDAGIN_IDENTIFIER, password: process.env.E2E_DISDAGIN_PASSWORD }),
+    body: JSON.stringify({ identifier: disdaginIdentifier, password: disdaginPassword }),
   });
   assert.equal(response.status, 200, await response.text());
   return response.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");

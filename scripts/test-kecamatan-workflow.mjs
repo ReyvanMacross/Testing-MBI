@@ -13,6 +13,8 @@ const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 assert.ok(publishableKey, "Publishable key Supabase wajib tersedia.");
 const admin = createClient(supabaseUrl, supabaseSecretKey, { auth: { persistSession: false, autoRefreshToken: false } });
 const helpdeskDescription = "Kendala sintetis workflow Kecamatan untuk menguji pencatatan helpdesk terkontrol.";
+const kecamatanIdentifier = process.env.E2E_KECAMATAN_IDENTIFIER || process.env.KECAMATAN_ADMIN_USERNAME || "admin.kecamatan";
+const kecamatanPassword = process.env.E2E_KECAMATAN_PASSWORD || process.env.KECAMATAN_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
 
 async function login(identifier, password) {
   assert.ok(identifier && password, "Credential pengujian wajib tersedia.");
@@ -36,7 +38,7 @@ function mutation(path, cookie, body, method = "POST", origin = ORIGIN) {
 let fixture;
 try {
   fixture = await seedKecamatanFixtures();
-  const cookie = await login(process.env.E2E_KECAMATAN_IDENTIFIER, process.env.E2E_KECAMATAN_PASSWORD);
+  const cookie = await login(kecamatanIdentifier, kecamatanPassword);
 
   const page = await fetch(`${BASE_URL}/kecamatan`, { headers: { Cookie: cookie } });
   const pageText = await page.text();
@@ -138,7 +140,7 @@ try {
 
   const browser = createClient(supabaseUrl, publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const session = await browser.auth.signInWithPassword({
-    email: ["admin.kecamatan.sukajadi", "staging.invalid"].join("@"), password: process.env.E2E_KECAMATAN_PASSWORD,
+    email: ["admin.kecamatan.sukajadi", "staging.invalid"].join("@"), password: kecamatanPassword,
   });
   assert.ifError(session.error);
   const anonHeaders = { apikey: publishableKey };

@@ -5,8 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdminEnvironment, loadProjectEnvironment } from "../lib/project-env.mjs";
 
 await loadProjectEnvironment();
-const username = process.env.DP3A_ADMIN_USERNAME;
-const password = process.env.DP3A_ADMIN_PASSWORD;
+const username = process.env.DP3A_ADMIN_USERNAME || "admin.dp3a";
+const password = process.env.DP3A_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
 assert.equal(username, "admin.dp3a", "Username staging DP3A harus admin.dp3a.");
 assert.ok(password && password.length >= 16, "Password staging DP3A minimal 16 karakter.");
 

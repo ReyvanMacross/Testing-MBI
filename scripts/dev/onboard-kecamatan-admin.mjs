@@ -5,8 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdminEnvironment, loadProjectEnvironment } from "../lib/project-env.mjs";
 
 await loadProjectEnvironment();
-const username = process.env.KECAMATAN_ADMIN_USERNAME;
-const password = process.env.KECAMATAN_ADMIN_PASSWORD;
+const username = process.env.KECAMATAN_ADMIN_USERNAME || "admin.kecamatan";
+const password = process.env.KECAMATAN_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
 assert.equal(username, "admin.kecamatan", "Username staging Kecamatan harus admin.kecamatan.");
 assert.ok(password && password.length >= 16, "Password staging Kecamatan minimal 16 karakter.");
 
@@ -75,5 +75,16 @@ if (existing) {
   });
   if (error) throw error;
 }
+
+const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+assert.ok(publishableKey, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY wajib dikonfigurasi.");
+const browser = createClient(supabaseUrl, publishableKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+const verification = await browser.auth.signInWithPassword({ email, password });
+if (verification.error || verification.data.user?.id !== authUserId) {
+  throw verification.error ?? new Error("Verifikasi login Kecamatan gagal.");
+}
+await browser.auth.signOut({ scope: "local" });
 
 console.log("Admin Kecamatan Sukajadi berhasil di-onboard.");

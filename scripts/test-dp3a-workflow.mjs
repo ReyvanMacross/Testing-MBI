@@ -12,6 +12,8 @@ const { supabaseUrl, supabaseSecretKey } = getSupabaseAdminEnvironment();
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 assert.ok(publishableKey, "Supabase publishable key wajib tersedia.");
 const admin = createClient(supabaseUrl, supabaseSecretKey, { auth: { persistSession: false, autoRefreshToken: false } });
+const dp3aIdentifier = process.env.E2E_DP3A_IDENTIFIER || process.env.DP3A_ADMIN_USERNAME || "admin.dp3a";
+const dp3aPassword = process.env.E2E_DP3A_PASSWORD || process.env.DP3A_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
 
 async function login(identifier, password) {
   assert.ok(identifier && password, "Credential pengujian wajib tersedia.");
@@ -52,7 +54,7 @@ async function provisionCrossOpdActor() {
   return auth.data.user.id;
 }
 
-const dp3aCookie = await login(process.env.E2E_DP3A_IDENTIFIER, process.env.E2E_DP3A_PASSWORD);
+const dp3aCookie = await login(dp3aIdentifier, dp3aPassword);
 const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 const yesterday = new Date(`${today}T00:00:00Z`); yesterday.setUTCDate(yesterday.getUTCDate() - 1); const yesterdayText = yesterday.toISOString().slice(0, 10);
 const tomorrow = new Date(`${today}T00:00:00Z`); tomorrow.setUTCDate(tomorrow.getUTCDate() + 1); const tomorrowText = tomorrow.toISOString().slice(0, 10);
@@ -132,7 +134,7 @@ try {
   const profile = await admin.from("user_profiles").select("email").eq("username", "admin.dp3a").single();
   assert.ifError(profile.error);
   const browser = createClient(supabaseUrl, publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const browserLogin = await browser.auth.signInWithPassword({ email: profile.data.email, password: process.env.E2E_DP3A_PASSWORD });
+  const browserLogin = await browser.auth.signInWithPassword({ email: profile.data.email, password: dp3aPassword });
   assert.ifError(browserLogin.error);
   const anonHeaders = { apikey: publishableKey };
   const authHeaders = { apikey: publishableKey, Authorization: `Bearer ${browserLogin.data.session.access_token}` };

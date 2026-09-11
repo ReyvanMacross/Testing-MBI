@@ -91,6 +91,9 @@ const requiredFiles = [
   "scripts/dev/seed-staging-warga-demo.mjs",
   "scripts/audit-staging-warga-demo.mjs",
   "docs/integration/warga-data-dependencies.md",
+  ".env.test.example",
+  "docs/integration/staging-environment.md",
+  "scripts/check-integration-env.mjs",
 ];
 for (const file of requiredFiles) {
   assert.ok(tracked.stdout.split("\0").includes(file), `${file} belum tergabung.`);
@@ -116,8 +119,30 @@ for (const script of [
   "staging:seed-disdagin-demo",
   "scan:pii",
   "scan:secrets",
+  "check:integration-env",
+  "onboard:integration-actors",
 ]) {
   assert.ok(packageJson.scripts?.[script], `Package script ${script} hilang setelah merge.`);
+}
+
+const environmentTemplate = await readFile(path.join(PROJECT_ROOT, ".env.test.example"), "utf8");
+for (const variable of [
+  "SUPABASE_TEST_ADMIN_PASSWORD",
+  "KECAMATAN_ADMIN_USERNAME",
+  "KECAMATAN_ADMIN_PASSWORD",
+  "E2E_KECAMATAN_IDENTIFIER",
+  "E2E_KECAMATAN_PASSWORD",
+  "DP3A_ADMIN_USERNAME",
+  "DP3A_ADMIN_PASSWORD",
+  "E2E_DP3A_IDENTIFIER",
+  "E2E_DP3A_PASSWORD",
+  "DISDAGIN_ADMIN_PROFILE_ID",
+  "DISDAGIN_ADMIN_USERNAME",
+  "DISDAGIN_ADMIN_PASSWORD",
+  "E2E_DISDAGIN_IDENTIFIER",
+  "E2E_DISDAGIN_PASSWORD",
+]) {
+  assert.match(environmentTemplate, new RegExp(`^${variable}=`, "mu"), `${variable} belum didokumentasikan di template env.`);
 }
 
 const productionGuard = await readFile(path.join(PROJECT_ROOT, "scripts", "check-production-env.mjs"), "utf8");

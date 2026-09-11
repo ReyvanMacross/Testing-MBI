@@ -52,7 +52,12 @@ async function kecamatanCreatesReferral(browser: Browser, citizenName: string) {
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
   const page = await context.newPage();
   try {
-    await login(page, process.env.E2E_KECAMATAN_IDENTIFIER, process.env.E2E_KECAMATAN_PASSWORD, "/kecamatan");
+    await login(
+      page,
+      process.env.E2E_KECAMATAN_IDENTIFIER || process.env.KECAMATAN_ADMIN_USERNAME || "admin.kecamatan",
+      process.env.E2E_KECAMATAN_PASSWORD || process.env.KECAMATAN_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
+      "/kecamatan",
+    );
     let row = rowFor(page, citizenName);
 
     await row.getByRole("button", { name: "Tugaskan Survei" }).click();
@@ -98,7 +103,12 @@ async function dp3aCompletesReferral(browser: Browser, citizenName: string) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   try {
-    await login(page, process.env.E2E_DP3A_IDENTIFIER, process.env.E2E_DP3A_PASSWORD, "/dp3a");
+    await login(
+      page,
+      process.env.E2E_DP3A_IDENTIFIER || process.env.DP3A_ADMIN_USERNAME || "admin.dp3a",
+      process.env.E2E_DP3A_PASSWORD || process.env.DP3A_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
+      "/dp3a",
+    );
     const row = rowFor(page, citizenName);
     await expect(row.getByText("Perlu Diproses")).toBeVisible();
 
@@ -138,7 +148,12 @@ async function kecamatanSeesCompletion(browser: Browser, citizenName: string) {
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
   const page = await context.newPage();
   try {
-    await login(page, process.env.E2E_KECAMATAN_IDENTIFIER, process.env.E2E_KECAMATAN_PASSWORD, "/kecamatan");
+    await login(
+      page,
+      process.env.E2E_KECAMATAN_IDENTIFIER || process.env.KECAMATAN_ADMIN_USERNAME || "admin.kecamatan",
+      process.env.E2E_KECAMATAN_PASSWORD || process.env.KECAMATAN_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
+      "/kecamatan",
+    );
     await page.goto("/kecamatan/rujukan");
     const row = rowFor(page, citizenName);
     await expect(row.getByText("Selesai / Intervensi")).toBeVisible();

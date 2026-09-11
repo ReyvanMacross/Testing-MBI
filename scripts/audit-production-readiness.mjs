@@ -941,7 +941,7 @@ if (!publishableKey) {
   const dp3aProfile = profiles.find((row) => row.username === "admin.dp3a");
   const dp3aBrowserLogin = dp3aProfile ? await dp3aBrowser.auth.signInWithPassword({
     email: dp3aProfile.email ?? "",
-    password: process.env.DP3A_ADMIN_PASSWORD ?? process.env.E2E_DP3A_PASSWORD ?? "",
+    password: process.env.DP3A_ADMIN_PASSWORD || process.env.E2E_DP3A_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD || "",
   }) : { data: { session: null }, error: null };
   if (dp3aProfile && (dp3aBrowserLogin.error || !dp3aBrowserLogin.data.session)) securityBlockers.push("Authenticated DP3A RLS audit login failed");
 

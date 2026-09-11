@@ -74,6 +74,8 @@
     "test:disdik-concurrency": "node scripts/test-disdik-concurrency.mjs",
     "verify:disdik-source": "npm run test:disdik-contract && npm run audit:disdik-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build",
     "audit:integration": "node scripts/audit-mbi-integration.mjs",
+    "check:integration-env": "node scripts/check-integration-env.mjs",
+    "onboard:integration-actors": "npm run onboard:kecamatan && npm run onboard:dp3a && npm run onboard:disdagin",
     "test:e2e:integration": "playwright test tests/e2e/mbi-integration.spec.ts",
     "test:e2e:kecamatan-dp3a": "playwright test tests/e2e/kecamatan-dp3a.spec.ts",
     "verify:integration-source": "npm run audit:integration && npm run test:disdik-contract && npm run test:kecamatan-contract && npm run test:dp3a-contract && npm run test:disdagin-contract && npm run audit:dinsos-api-guards && npm run audit:disnaker-api-guards && npm run audit:diskop-api-guards && npm run audit:disdik-api-guards && npm run audit:kecamatan-api-guards && npm run audit:dp3a-api-guards && npm run audit:disdagin-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build",

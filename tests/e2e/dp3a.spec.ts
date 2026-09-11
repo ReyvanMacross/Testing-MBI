@@ -22,8 +22,8 @@ const today = new Intl.DateTimeFormat("en-CA", {
 }).format(new Date());
 
 async function login(page: Page) {
-  const identifier = process.env.E2E_DP3A_IDENTIFIER;
-  const password = process.env.E2E_DP3A_PASSWORD;
+  const identifier = process.env.E2E_DP3A_IDENTIFIER || process.env.DP3A_ADMIN_USERNAME || "admin.dp3a";
+  const password = process.env.E2E_DP3A_PASSWORD || process.env.DP3A_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
   if (!identifier || !password) throw new Error("Credential E2E DP3A belum tersedia.");
   await page.goto("/login");
   await page.getByLabel("Nama Pengguna atau NIP").fill(identifier);

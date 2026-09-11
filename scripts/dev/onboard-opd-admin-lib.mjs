@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -21,11 +22,11 @@ export async function onboardOpdAdmin({
   fullName,
   institution,
   preferredEmail,
+  fallbackPassword,
 }) {
   const profileId = process.env[`${envPrefix}_ADMIN_PROFILE_ID`];
-  const username = process.env[`${envPrefix}_ADMIN_USERNAME`];
-  const password = process.env[`${envPrefix}_ADMIN_PASSWORD`];
-  assert.ok(profileId, `${envPrefix}_ADMIN_PROFILE_ID wajib dikonfigurasi.`);
+  const username = process.env[`${envPrefix}_ADMIN_USERNAME`] || expectedUsername;
+  const password = process.env[`${envPrefix}_ADMIN_PASSWORD`] || fallbackPassword;
   assert.equal(username, expectedUsername, `Username staging ${opdCode} harus ${expectedUsername}.`);
   assert.ok(password && password.length >= 12, `Password staging ${opdCode} minimal 12 karakter.`);
 
@@ -38,9 +39,13 @@ export async function onboardOpdAdmin({
   if (opdError || !opd) throw opdError ?? new Error(`Master OPD ${opdCode} tidak ditemukan.`);
 
   const fields = "id,email,role,opd_id,auth_user_id,master_opd(kode_opd)";
-  let { data: profile, error: profileError } = await admin.from("user_profiles")
-    .select(fields).eq("id", profileId).maybeSingle();
-  if (profileError) throw profileError;
+  let profile = null;
+  if (profileId) {
+    const profileLookup = await admin.from("user_profiles")
+      .select(fields).eq("id", profileId).maybeSingle();
+    if (profileLookup.error) throw profileLookup.error;
+    profile = profileLookup.data;
+  }
   if (!profile) {
     const usernameLookup = await admin.from("user_profiles")
       .select(fields).eq("username", username).maybeSingle();
@@ -90,7 +95,7 @@ export async function onboardOpdAdmin({
   };
   const profileWrite = profile
     ? await admin.from("user_profiles").update(profileValues).eq("id", profile.id).select("id").single()
-    : await admin.from("user_profiles").insert({ id: profileId, ...profileValues }).select("id").single();
+    : await admin.from("user_profiles").insert({ id: profileId || randomUUID(), ...profileValues }).select("id").single();
   if (profileWrite.error || !profileWrite.data) {
     throw profileWrite.error ?? new Error(`Profil Admin ${opdCode} gagal disimpan.`);
   }

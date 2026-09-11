@@ -15,8 +15,8 @@ let fixture: Fixture;
 let fixtureSeeded = false;
 
 async function login(page: Page) {
-  const identifier = process.env.E2E_KECAMATAN_IDENTIFIER;
-  const password = process.env.E2E_KECAMATAN_PASSWORD;
+  const identifier = process.env.E2E_KECAMATAN_IDENTIFIER || process.env.KECAMATAN_ADMIN_USERNAME || "admin.kecamatan";
+  const password = process.env.E2E_KECAMATAN_PASSWORD || process.env.KECAMATAN_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
   if (!identifier || !password) throw new Error("Credential E2E Kecamatan belum tersedia.");
   await page.goto("/login");
   await page.getByLabel("Nama Pengguna atau NIP").fill(identifier);

@@ -17,8 +17,8 @@ let fixtureSeeded = false;
 const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
 async function login(page: Page) {
-  const identifier = process.env.E2E_DISDAGIN_IDENTIFIER;
-  const password = process.env.E2E_DISDAGIN_PASSWORD;
+  const identifier = process.env.E2E_DISDAGIN_IDENTIFIER || process.env.DISDAGIN_ADMIN_USERNAME || "admin.disdagin";
+  const password = process.env.E2E_DISDAGIN_PASSWORD || process.env.DISDAGIN_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
   if (!identifier || !password) throw new Error("Credential E2E Disdagin belum tersedia.");
   await page.goto("/login");
   await page.getByLabel("Nama Pengguna atau NIP").fill(identifier);

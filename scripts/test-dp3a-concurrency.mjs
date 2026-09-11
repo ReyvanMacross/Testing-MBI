@@ -10,9 +10,11 @@ const BASE_URL = process.env.MBI_TEST_BASE_URL ?? "http://localhost:3000";
 const ORIGIN = process.env.APP_ORIGIN ?? BASE_URL;
 const { supabaseUrl, supabaseSecretKey } = getSupabaseAdminEnvironment();
 const admin = createClient(supabaseUrl, supabaseSecretKey, { auth: { persistSession: false, autoRefreshToken: false } });
+const dp3aIdentifier = process.env.E2E_DP3A_IDENTIFIER || process.env.DP3A_ADMIN_USERNAME || "admin.dp3a";
+const dp3aPassword = process.env.E2E_DP3A_PASSWORD || process.env.DP3A_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD;
 
 async function login() {
-  const response = await fetch(`${BASE_URL}/api/auth/login`, { method: "POST", headers: { "Content-Type": "application/json", Origin: ORIGIN, "Sec-Fetch-Site": "same-origin" }, body: JSON.stringify({ identifier: process.env.E2E_DP3A_IDENTIFIER, password: process.env.E2E_DP3A_PASSWORD }) });
+  const response = await fetch(`${BASE_URL}/api/auth/login`, { method: "POST", headers: { "Content-Type": "application/json", Origin: ORIGIN, "Sec-Fetch-Site": "same-origin" }, body: JSON.stringify({ identifier: dp3aIdentifier, password: dp3aPassword }) });
   assert.equal(response.status, 200, await response.text());
   return response.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");
 }

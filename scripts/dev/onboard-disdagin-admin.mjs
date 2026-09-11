@@ -8,5 +8,6 @@ await onboardOpdAdmin({
   opdCode: "DISDAGIN",
   fullName: "Admin Disdagin Kota Bandung",
   institution: "Dinas Perdagangan dan Perindustrian Kota Bandung",
+  fallbackPassword: process.env.SUPABASE_TEST_ADMIN_PASSWORD,
 });
 console.log("Admin Disdagin berhasil di-onboard.");
