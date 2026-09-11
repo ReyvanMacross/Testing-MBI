@@ -90,6 +90,14 @@ const accounts: Account[] = [
     blockedRoute: "/dkpp",
     heading: "Rujukan Masuk & Intervensi",
   },
+  {
+    name: "Cipta Bintar",
+    identifier: process.env.E2E_CIPTA_BINTAR_IDENTIFIER || process.env.CIPTA_BINTAR_ADMIN_USERNAME || "admin.cipta-bintar",
+    password: process.env.E2E_CIPTA_BINTAR_PASSWORD || process.env.CIPTA_BINTAR_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
+    home: "/cipta-bintar",
+    blockedRoute: "/disbudpar",
+    heading: "Rujukan Masuk & Intervensi",
+  },
 ];
 
 async function login(page: Page, account: Account) {

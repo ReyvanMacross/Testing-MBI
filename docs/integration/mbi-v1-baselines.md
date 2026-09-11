@@ -15,6 +15,14 @@ Branch `integration/mbi-v1` adalah source-of-truth pengembangan selama tahap pro
 | DKPP | `feat/dkpp-mvp` | `8608ef1c465dbe6b0d91052a1cd5de68e362972e` | Workflow ketahanan pangan, kuota, laporan panen, API guard, dan concurrency. |
 | Disbudpar | `feat/disbudpar-mvp` | `b0e3dc39b6505b7061beaa100e06e2d6a1b1a2ca` | Workflow ekonomi kreatif, kuota, laporan pembinaan, API guard, dan concurrency. |
 
+## Kandidat modul berikutnya
+
+Branch `feat/cipta-bintar-mvp` dimulai langsung dari baseline `integration/mbi-v1 @ ace3130420662c5acfad71174adbb989007294f2`. Modul ini memakai kode OPD canonical `CIPTA_BINTAR`, route `/cipta-bintar`, dan tabel domain `cipta_bintar_*`. Commit baseline Cipta Bintar baru ditambahkan ke tabel setelah branch diintegrasikan ke `integration/mbi-v1`.
+
+Gate kandidat mencakup workflow rehabilitasi infrastruktur, kuota program, realisasi anggaran, laporan fisik, transactional RPC, API guard, RLS, concurrency, E2E desktop/mobile, serta verifikasi bahwa fixture pengujian dapat dibersihkan tanpa menghapus data demo persisten.
+
+Validasi lintas modul juga mengunci tanggal bisnis Disdik ke `Asia/Jakarta`, sehingga realisasi progress yang dibuat setelah tengah malam WIB tidak lagi tertolak oleh tanggal UTC database yang masih berada pada hari sebelumnya.
+
 `npm run audit:integration` memastikan semua commit baseline di atas adalah ancestor dari `HEAD`. Audit yang sama membaca migration langsung dari `supabase/migrations`, sehingga jumlah migration tidak disalin secara manual ke dokumen ini.
 
 Fix custom test port dari DP3A `1e13b987699d43a039015286a077301c58daf43e` dipindahkan secara khusus ke jalur integrasi tanpa menggabungkan ulang branch DP3A yang sudah tertinggal. `playwright.config.ts` dan hosted verifier mengambil port dari `MBI_TEST_BASE_URL`, menolak nilai port yang tidak valid, dan memastikan `APP_ORIGIN` memakai origin yang sama.
@@ -34,8 +42,14 @@ Validasi hosted menjalankan:
 - E2E Kecamatan, DP3A, aliran Kecamatan–DP3A, Disdagin, DKPP, dan Disbudpar;
 - audit schema/RLS/RPC lintas OPD dan cleanup fixture dengan data demo persisten tetap tersedia.
 
-Freeze terakhir menghasilkan 605 pemeriksaan staging tanpa blocker, PII 0, secret 0, dan fixture pengujian tersisa 0. Data demo persisten tetap berjumlah 24 warga.
+Pada branch kandidat Cipta Bintar, rangkaian source dan hosted di atas diperluas dengan kontrak, API guard, schema audit, workflow, concurrency, login/routing akun ke-11, dan E2E Cipta Bintar.
+
+Freeze resmi sepuluh modul menghasilkan 605 pemeriksaan staging tanpa blocker. Validasi kandidat Cipta Bintar memperluas audit menjadi 643 pemeriksaan tanpa blocker, PII 0, secret 0, isolasi 11 akun, dan fixture pengujian tersisa 0. Data demo persisten tetap berjumlah 24 warga.
 
 Status baseline saat ini:
 
 > **HOSTED STAGING VALIDATED — READY FOR NEXT MVP**
+
+Status kandidat Cipta Bintar:
+
+> **11-MODULE CANDIDATE — HOSTED STAGING VALIDATED — READY TO FREEZE**

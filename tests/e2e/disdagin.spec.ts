@@ -86,8 +86,12 @@ test.describe.serial("Disdagin real database workflow", () => {
 
   test("program catalog and revenue report use database records", async ({ page }) => {
     await login(page);
-    await page.getByRole("link", { name: "Agenda & Kemitraan" }).click();
-    await expect(page.getByRole("heading", { name: "Katalog Kemitraan & Pameran Dagang" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Rujukan Masuk & Intervensi" })).toBeVisible();
+    await Promise.all([
+      page.waitForURL(/\/disdagin\/program$/, { timeout: 15_000 }),
+      page.getByRole("link", { name: "Agenda & Kemitraan" }).click(),
+    ]);
+    await expect(page.getByRole("heading", { name: "Katalog Kemitraan & Pameran Dagang" })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("Pendampingan Usaha Development", { exact: true }).first()).toBeVisible();
     await page.getByRole("button", { name: /Tambah Agenda/ }).click();
     await expect(page.getByRole("dialog", { name: "Tambah Agenda Kemitraan & Pameran Baru" }).getByLabel("Mitra / Penyelenggara Target")).toContainText("Pendamping PLUT Development");

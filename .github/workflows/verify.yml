@@ -22,6 +22,7 @@ on:
       - feat/disdagin-mvp
       - feat/dkpp-mvp
       - feat/disbudpar-mvp
+      - feat/cipta-bintar-mvp
       - integration/**
 
 permissions:
@@ -43,6 +44,7 @@ jobs:
       DISDAGIN_PREVIEW_MODE: "false"
       DKPP_PREVIEW_MODE: "false"
       DISBUDPAR_PREVIEW_MODE: "false"
+      CIPTA_BINTAR_PREVIEW_MODE: "false"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +65,7 @@ jobs:
       - run: npm run test:disdagin-contract
       - run: npm run test:dkpp-contract
       - run: npm run test:disbudpar-contract
+      - run: npm run test:cipta-bintar-contract
       - run: npm run scan:pii
       - run: npm run scan:secrets
       - run: npm run audit:dinsos-api-guards
@@ -74,6 +77,7 @@ jobs:
       - run: npm run audit:disdagin-api-guards
       - run: npm run audit:dkpp-api-guards
       - run: npm run audit:disbudpar-api-guards
+      - run: npm run audit:cipta-bintar-api-guards
 
   hosted-staging-verification:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_hosted_staging }}
@@ -94,6 +98,7 @@ jobs:
       DISDAGIN_PREVIEW_MODE: "false"
       DKPP_PREVIEW_MODE: "false"
       DISBUDPAR_PREVIEW_MODE: "false"
+      CIPTA_BINTAR_PREVIEW_MODE: "false"
       SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
       SUPABASE_TEST_ADMIN_PASSWORD: ${{ secrets.SUPABASE_TEST_ADMIN_PASSWORD }}
       SUPABASE_TEST_FIELD_PASSWORD: ${{ secrets.SUPABASE_TEST_FIELD_PASSWORD }}
@@ -118,6 +123,8 @@ jobs:
       E2E_DKPP_PASSWORD: ${{ secrets.E2E_DKPP_PASSWORD }}
       E2E_DISBUDPAR_IDENTIFIER: ${{ secrets.E2E_DISBUDPAR_IDENTIFIER }}
       E2E_DISBUDPAR_PASSWORD: ${{ secrets.E2E_DISBUDPAR_PASSWORD }}
+      E2E_CIPTA_BINTAR_IDENTIFIER: ${{ secrets.E2E_CIPTA_BINTAR_IDENTIFIER }}
+      E2E_CIPTA_BINTAR_PASSWORD: ${{ secrets.E2E_CIPTA_BINTAR_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:

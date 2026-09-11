@@ -18,7 +18,7 @@ Copy-Item .env.test.example .env.test.local
 npm.cmd run check:integration-env
 ```
 
-Petunjuk akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, dan onboarding hosted staging tersedia di [docs/integration/staging-environment.md](docs/integration/staging-environment.md).
+Petunjuk akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, dan onboarding hosted staging tersedia di [docs/integration/staging-environment.md](docs/integration/staging-environment.md).
 
 ## Cakupan aplikasi
 
@@ -38,6 +38,7 @@ Petunjuk akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, dan onboarding hosted 
   - Disdagin
   - DKPP
   - Disbudpar
+- Branch kandidat `feat/cipta-bintar-mvp` menambahkan modul Dinas Cipta Bintar dengan kode OPD canonical `CIPTA_BINTAR`, route `/cipta-bintar`, dan schema `cipta_bintar_*`. Kandidat ini sudah lulus validasi source dan hosted staging 11 akun; baseline resmi tetap sepuluh modul sampai branch diintegrasikan dan commit-nya dikunci.
 - Selama tahap prototype, source-of-truth pengembangan adalah branch `integration/mbi-v1`. Branch `main` diperbarui setelah seluruh prototype selesai dan baseline final tervalidasi.
 - Data warga menggunakan tabel bersama `warga`; tabel domain OPD hanya menyimpan data proses dan layanan khusus.
 

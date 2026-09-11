@@ -8,13 +8,14 @@ async function source(file) {
   return readFile(path.join(PROJECT_ROOT, file), "utf8");
 }
 
-const [data, shell, input, foundation, operations, hardening, audit, productionEnvironmentCheck] = await Promise.all([
+const [data, shell, input, foundation, operations, hardening, businessDate, audit, productionEnvironmentCheck] = await Promise.all([
   source("lib/disdik/data.ts"),
   source("components/disdik/shell/disdik-shell.tsx"),
   source("lib/disdik/input.ts"),
   source("supabase/migrations/202609100001_disdik_workflow_foundation.sql"),
   source("supabase/migrations/202609100002_disdik_operational_rpcs.sql"),
   source("supabase/migrations/202609100003_disdik_final_hardening.sql"),
+  source("supabase/migrations/202609160006_disdik_bandung_business_date.sql"),
   source("supabase/audits/disdik-final-schema-check.sql"),
   source("scripts/check-production-env.mjs"),
 ]);
@@ -47,5 +48,7 @@ for (const routine of ["disdik_start_intervention", "disdik_update_intervention_
 for (const invariant of ["DISDIK_PROGRAM_OVER_CAPACITY", "STARTED_EVENT_REQUIRED", "INVALID_DISDIK_COMPLETED_LIFECYCLE", "COMPLETED_REFERRAL_REQUIRES_REALIZATION"]) {
   assert.ok(hardening.includes(invariant), `Hardening belum memeriksa ${invariant}.`);
 }
+assert.match(businessDate, /clock_timestamp\(\) at time zone 'Asia\/Jakarta'/u);
+assert.match(businessDate, /PROGRESS_BEFORE_START/u);
 
 console.log("Kontrak source, navigasi, preview, RPC, RLS, dan hardening Disdik: PASS");
