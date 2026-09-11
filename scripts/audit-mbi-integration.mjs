@@ -11,6 +11,8 @@ const baselines = {
   disnaker: "9b0c502cc4fc5c49430648b4d6adbac6beb27cf3",
   diskop: "e75a761bc1bf04cd8b2e487a7e1f71f7d3009d40",
   disdik: "f32fa8050c904e001832f623e3c1b0395790b65a",
+  kecamatan: "96e55163bfae1598dcb29b730e40dfdeebf725b5",
+  dp3a: "b36be9f9d4d007116c4f074e904733cba4275a0f",
 };
 
 for (const [module, commit] of Object.entries(baselines)) {
@@ -80,6 +82,7 @@ const requiredFiles = [
   "scripts/audit-disdik-api-guards.mjs",
   "scripts/audit-kecamatan-api-guards.mjs",
   "scripts/audit-dp3a-api-guards.mjs",
+  "tests/e2e/kecamatan-dp3a.spec.ts",
 ];
 for (const file of requiredFiles) {
   assert.ok(tracked.stdout.split("\0").includes(file), `${file} belum tergabung.`);

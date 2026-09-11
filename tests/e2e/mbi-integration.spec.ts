@@ -51,6 +51,14 @@ const accounts: Account[] = [
     heading: "Rujukan Masuk & Intervensi",
   },
   {
+    name: "Kecamatan",
+    identifier: process.env.E2E_KECAMATAN_IDENTIFIER,
+    password: process.env.E2E_KECAMATAN_PASSWORD,
+    home: "/kecamatan",
+    blockedRoute: "/dp3a",
+    heading: "Antrian Kerja Kewilayahan",
+  },
+  {
     name: "DP3A",
     identifier: process.env.E2E_DP3A_IDENTIFIER,
     password: process.env.E2E_DP3A_PASSWORD,
