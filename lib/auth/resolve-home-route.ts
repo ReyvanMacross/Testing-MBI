@@ -5,6 +5,7 @@ export type HomeRouteProfile = {
 
 export function resolveHomeRoute(profile: HomeRouteProfile) {
   if (profile.role === "Admin Diskominfo") return "/diskominfo";
+  if (profile.role === "Operator Kecamatan") return "/kecamatan";
   if (profile.role === "INTERVENSI" && profile.opdCode === "DINSOS") {
     return "/dinsos";
   }

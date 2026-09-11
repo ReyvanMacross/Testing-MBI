@@ -53,6 +53,7 @@ for (const table of [
   "disnaker_interventions",
   "diskop_interventions",
   "disdik_interventions",
+  "kecamatan_warga_usulan",
 ]) {
   const directRls = new RegExp(
     `alter\\s+table\\s+public\\.${table}\\s+enable\\s+row\\s+level\\s+security`,
@@ -70,10 +71,12 @@ const requiredFiles = [
   "supabase/audits/disnaker-final-schema-check.sql",
   "supabase/audits/diskop-final-schema-check.sql",
   "supabase/audits/disdik-final-schema-check.sql",
+  "supabase/audits/kecamatan-final-schema-check.sql",
   "scripts/audit-dinsos-api-guards.mjs",
   "scripts/audit-disnaker-api-guards.mjs",
   "scripts/audit-diskop-api-guards.mjs",
   "scripts/audit-disdik-api-guards.mjs",
+  "scripts/audit-kecamatan-api-guards.mjs",
 ];
 for (const file of requiredFiles) {
   assert.ok(tracked.stdout.split("\0").includes(file), `${file} belum tergabung.`);
@@ -83,6 +86,7 @@ const homeRoutes = await readFile(path.join(PROJECT_ROOT, "lib", "auth", "resolv
 for (const [opd, route] of [["DINSOS", "/dinsos"], ["DISNAKER", "/disnaker"], ["DISKOP", "/diskop"], ["DISDIK", "/disdik"]]) {
   assert.ok(homeRoutes.includes(`opdCode === "${opd}"`) && homeRoutes.includes(`return "${route}"`), `Routing ${opd} belum tergabung.`);
 }
+assert.ok(homeRoutes.includes('profile.role === "Operator Kecamatan"') && homeRoutes.includes('return "/kecamatan"'), "Routing Kecamatan belum tergabung.");
 
 const packageJson = JSON.parse(await readFile(path.join(PROJECT_ROOT, "package.json"), "utf8"));
 for (const script of [
@@ -91,6 +95,7 @@ for (const script of [
   "audit:disnaker-api-guards",
   "audit:diskop-api-guards",
   "audit:disdik-api-guards",
+  "audit:kecamatan-api-guards",
   "scan:pii",
   "scan:secrets",
 ]) {

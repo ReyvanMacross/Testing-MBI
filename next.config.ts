@@ -43,6 +43,18 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "private, no-store, max-age=0" },
         ],
       },
+      {
+        source: "/kecamatan/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+        ],
+      },
+      {
+        source: "/api/kecamatan/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+        ],
+      },
     ];
   },
 };
