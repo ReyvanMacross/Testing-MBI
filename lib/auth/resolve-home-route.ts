@@ -24,5 +24,8 @@ export function resolveHomeRoute(profile: HomeRouteProfile) {
   if (profile.role === "INTERVENSI" && profile.opdCode === "DISDAGIN") {
     return "/disdagin";
   }
+  if (profile.role === "INTERVENSI" && profile.opdCode === "DKPP") {
+    return "/dkpp";
+  }
   return null;
 }

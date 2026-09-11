@@ -13,6 +13,7 @@ const baselines = {
   disdik: "f32fa8050c904e001832f623e3c1b0395790b65a",
   kecamatan: "96e55163bfae1598dcb29b730e40dfdeebf725b5",
   dp3a: "b36be9f9d4d007116c4f074e904733cba4275a0f",
+  disdagin: "5cadabdde950b85343832ee6a4fd7bbd1cc755bf",
 };
 
 for (const [module, commit] of Object.entries(baselines)) {
@@ -58,6 +59,7 @@ for (const table of [
   "kecamatan_warga_usulan",
   "dp3a_cases",
   "disdagin_interventions",
+  "dkpp_interventions",
 ]) {
   const directRls = new RegExp(
     `alter\\s+table\\s+public\\.${table}\\s+enable\\s+row\\s+level\\s+security`,
@@ -78,6 +80,7 @@ const requiredFiles = [
   "supabase/audits/kecamatan-final-schema-check.sql",
   "supabase/audits/dp3a-final-schema-check.sql",
   "supabase/audits/disdagin-final-schema-check.sql",
+  "supabase/audits/dkpp-final-schema-check.sql",
   "scripts/audit-dinsos-api-guards.mjs",
   "scripts/audit-disnaker-api-guards.mjs",
   "scripts/audit-diskop-api-guards.mjs",
@@ -85,8 +88,11 @@ const requiredFiles = [
   "scripts/audit-kecamatan-api-guards.mjs",
   "scripts/audit-dp3a-api-guards.mjs",
   "scripts/audit-disdagin-api-guards.mjs",
+  "scripts/audit-dkpp-api-guards.mjs",
   "scripts/dev/seed-disdagin-demo.mjs",
+  "scripts/dev/seed-dkpp-demo.mjs",
   "tests/e2e/disdagin.spec.ts",
+  "tests/e2e/dkpp.spec.ts",
   "tests/e2e/kecamatan-dp3a.spec.ts",
   "scripts/dev/seed-staging-warga-demo.mjs",
   "scripts/audit-staging-warga-demo.mjs",
@@ -100,7 +106,7 @@ for (const file of requiredFiles) {
 }
 
 const homeRoutes = await readFile(path.join(PROJECT_ROOT, "lib", "auth", "resolve-home-route.ts"), "utf8");
-for (const [opd, route] of [["DINSOS", "/dinsos"], ["DISNAKER", "/disnaker"], ["DISKOP", "/diskop"], ["DISDIK", "/disdik"], ["DP3A", "/dp3a"], ["DISDAGIN", "/disdagin"]]) {
+for (const [opd, route] of [["DINSOS", "/dinsos"], ["DISNAKER", "/disnaker"], ["DISKOP", "/diskop"], ["DISDIK", "/disdik"], ["DP3A", "/dp3a"], ["DISDAGIN", "/disdagin"], ["DKPP", "/dkpp"]]) {
   assert.ok(homeRoutes.includes(`opdCode === "${opd}"`) && homeRoutes.includes(`return "${route}"`), `Routing ${opd} belum tergabung.`);
 }
 assert.ok(homeRoutes.includes('profile.role === "Operator Kecamatan"') && homeRoutes.includes('return "/kecamatan"'), "Routing Kecamatan belum tergabung.");
@@ -117,6 +123,9 @@ for (const script of [
   "test:disdagin-contract",
   "audit:disdagin-api-guards",
   "staging:seed-disdagin-demo",
+  "test:dkpp-contract",
+  "audit:dkpp-api-guards",
+  "staging:seed-dkpp-demo",
   "scan:pii",
   "scan:secrets",
   "check:integration-env",
@@ -146,12 +155,17 @@ for (const variable of [
   "DISDAGIN_ADMIN_PASSWORD",
   "E2E_DISDAGIN_IDENTIFIER",
   "E2E_DISDAGIN_PASSWORD",
+  "DKPP_ADMIN_PROFILE_ID",
+  "DKPP_ADMIN_USERNAME",
+  "DKPP_ADMIN_PASSWORD",
+  "E2E_DKPP_IDENTIFIER",
+  "E2E_DKPP_PASSWORD",
 ]) {
   assert.match(environmentTemplate, new RegExp(`^${variable}=`, "mu"), `${variable} belum didokumentasikan di template env.`);
 }
 
 const productionGuard = await readFile(path.join(PROJECT_ROOT, "scripts", "check-production-env.mjs"), "utf8");
-for (const flag of ["DISNAKER_PREVIEW_MODE", "DISKOP_PREVIEW_MODE", "DISDIK_PREVIEW_MODE", "DP3A_PREVIEW_MODE", "DISDAGIN_PREVIEW_MODE"]) {
+for (const flag of ["DISNAKER_PREVIEW_MODE", "DISKOP_PREVIEW_MODE", "DISDIK_PREVIEW_MODE", "DP3A_PREVIEW_MODE", "DISDAGIN_PREVIEW_MODE", "DKPP_PREVIEW_MODE"]) {
   assert.ok(productionGuard.includes(flag), `Production guard ${flag} hilang.`);
 }
 

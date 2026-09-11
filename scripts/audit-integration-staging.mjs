@@ -13,6 +13,7 @@ const audits = [
   ["Kecamatan", "kecamatan-final-schema-check.sql"],
   ["DP3A", "dp3a-final-schema-check.sql"],
   ["Disdagin", "disdagin-final-schema-check.sql"],
+  ["DKPP", "dkpp-final-schema-check.sql"],
 ];
 const blocker = /^(?:MISSING|BLOCKER|DISABLED|SECURITY_MODE_MISMATCH|SEARCH_PATH_MISSING)/u;
 

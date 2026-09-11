@@ -104,6 +104,7 @@ const accounts = [
   { label: "Kecamatan", defaultIdentifier: "admin.kecamatan", identifiers: ["E2E_KECAMATAN_IDENTIFIER", "KECAMATAN_ADMIN_USERNAME"], passwords: ["E2E_KECAMATAN_PASSWORD", "KECAMATAN_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
   { label: "DP3A", defaultIdentifier: "admin.dp3a", identifiers: ["E2E_DP3A_IDENTIFIER", "DP3A_ADMIN_USERNAME"], passwords: ["E2E_DP3A_PASSWORD", "DP3A_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
   { label: "Disdagin", defaultIdentifier: "admin.disdagin", identifiers: ["E2E_DISDAGIN_IDENTIFIER", "DISDAGIN_ADMIN_USERNAME"], passwords: ["E2E_DISDAGIN_PASSWORD", "DISDAGIN_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
+  { label: "DKPP", defaultIdentifier: "admin.dkpp", identifiers: ["E2E_DKPP_IDENTIFIER", "DKPP_ADMIN_USERNAME"], passwords: ["E2E_DKPP_PASSWORD", "DKPP_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
 ];
 
 for (const account of accounts) {
@@ -111,9 +112,11 @@ for (const account of accounts) {
   requirePassword(`${account.label} password`, 12, ...account.passwords);
 }
 
-const profileId = process.env.DISDAGIN_ADMIN_PROFILE_ID?.trim();
-if (profileId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(profileId)) {
-  invalid.push("DISDAGIN_ADMIN_PROFILE_ID harus berupa UUID jika diisi");
+for (const variable of ["DISDAGIN_ADMIN_PROFILE_ID", "DKPP_ADMIN_PROFILE_ID"]) {
+  const profileId = process.env[variable]?.trim();
+  if (profileId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(profileId)) {
+    invalid.push(`${variable} harus berupa UUID jika diisi`);
+  }
 }
 
 if (missing.length || invalid.length) {

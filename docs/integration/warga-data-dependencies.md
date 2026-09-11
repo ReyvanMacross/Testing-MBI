@@ -12,5 +12,6 @@ Seluruh modul operasional MBI memakai `warga` sebagai identitas penerima layanan
 | Disdik | Melalui referral | Bantuan pendidikan, progres, dan realisasi selalu terkait warga penerima referral. |
 | DP3A | Melalui referral | Penanganan kasus, progres, dan realisasi selalu terkait korban/warga pada referral. |
 | Disdagin | Melalui referral | Profil usaha, fasilitasi pasar, agenda, progres, dan laporan omzet selalu menelusuri warga dari `referral_mbi.warga_id`. |
+| DKPP | Melalui referral | Penerima program Buruan SAE, pendampingan, hasil panen, dan laporan ketahanan pangan selalu menelusuri warga dari `referral_mbi.warga_id`. Profil DKPP hanya menyimpan data domain pangan dan tetap merujuk `warga`. |
 
 `npm run staging:seed-warga` membuat atau memperbarui 24 warga prototype secara idempoten. Semua identitasnya sintetis, tersebar pada Desil 1-5 dan kelurahan di Kecamatan Sukajadi, serta tidak dihapus oleh cleanup fixture E2E. `npm run staging:audit-warga` memverifikasi jumlah, wilayah, desil, dan status verifikasinya.

@@ -74,6 +74,14 @@ const accounts: Account[] = [
     blockedRoute: "/dp3a",
     heading: "Rujukan Masuk & Intervensi",
   },
+  {
+    name: "DKPP",
+    identifier: process.env.E2E_DKPP_IDENTIFIER || process.env.DKPP_ADMIN_USERNAME || "admin.dkpp",
+    password: process.env.E2E_DKPP_PASSWORD || process.env.DKPP_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
+    home: "/dkpp",
+    blockedRoute: "/disdagin",
+    heading: "Rujukan Masuk & Intervensi",
+  },
 ];
 
 async function login(page: Page, account: Account) {

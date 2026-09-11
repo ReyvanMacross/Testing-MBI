@@ -16,11 +16,12 @@ Jalankan pemeriksaan berikut. Pemeriksaan hanya menampilkan **nama** variabel ya
 npm.cmd run check:integration-env
 ```
 
-Untuk baseline prototype, akun Kecamatan, DP3A, dan Disdagin memakai `SUPABASE_TEST_ADMIN_PASSWORD` jika password modul atau password E2E tidak diisi. Username bawaannya adalah:
+Untuk baseline prototype, akun Kecamatan, DP3A, Disdagin, dan DKPP memakai `SUPABASE_TEST_ADMIN_PASSWORD` jika password modul atau password E2E tidak diisi. Username bawaannya adalah:
 
 - `admin.kecamatan`
 - `admin.dp3a`
 - `admin.disdagin`
+- `admin.dkpp`
 
 Jika password khusus modul diisi, nilainya mengambil prioritas. Variabel `E2E_*_PASSWORD` juga boleh dikosongkan karena pengujian akan memakai password admin modul, lalu fallback prototype bersama.
 
@@ -32,7 +33,7 @@ Setelah migration tersedia dan `SUPABASE_SECRET_KEY` terisi, jalankan onboarding
 npm.cmd run onboard:integration-actors
 ```
 
-Perintah tersebut memeriksa target Supabase terlebih dahulu, kemudian membuat atau memperbarui profil Kecamatan, DP3A, dan Disdagin, menyambungkan `auth_user_id`, lalu memverifikasi login OPD. Untuk Disdagin, `DISDAGIN_ADMIN_PROFILE_ID` bersifat opsional; ID baru dibuat saat profil belum ada.
+Perintah tersebut memeriksa target Supabase terlebih dahulu, kemudian membuat atau memperbarui profil Kecamatan, DP3A, Disdagin, dan DKPP, menyambungkan `auth_user_id`, lalu memverifikasi login OPD. `DISDAGIN_ADMIN_PROFILE_ID` dan `DKPP_ADMIN_PROFILE_ID` bersifat opsional; ID baru dibuat saat profil belum ada. Semua akun dan modul memakai `NEXT_PUBLIC_SUPABASE_URL`, publishable key, secret key, serta database URL yang sama.
 
 Validasi lintas instansi dapat dijalankan setelah build dan server tersedia:
 
