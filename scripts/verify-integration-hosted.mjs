@@ -82,12 +82,15 @@ const workflowScripts = [
   "test:disdagin-concurrency",
   "test:dkpp",
   "test:dkpp-concurrency",
+  "test:disbudpar",
+  "test:disbudpar-concurrency",
   "test:e2e:integration",
   "test:e2e:kecamatan",
   "test:e2e:dp3a",
   "test:e2e:kecamatan-dp3a",
   "test:e2e:disdagin",
   "test:e2e:dkpp",
+  "test:e2e:disbudpar",
 ];
 
 let server;

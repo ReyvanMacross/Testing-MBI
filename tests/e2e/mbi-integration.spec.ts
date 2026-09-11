@@ -82,6 +82,14 @@ const accounts: Account[] = [
     blockedRoute: "/disdagin",
     heading: "Rujukan Masuk & Intervensi",
   },
+  {
+    name: "Disbudpar",
+    identifier: process.env.E2E_DISBUDPAR_IDENTIFIER || process.env.DISBUDPAR_ADMIN_USERNAME || "admin.disbudpar",
+    password: process.env.E2E_DISBUDPAR_PASSWORD || process.env.DISBUDPAR_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
+    home: "/disbudpar",
+    blockedRoute: "/dkpp",
+    heading: "Rujukan Masuk & Intervensi",
+  },
 ];
 
 async function login(page: Page, account: Account) {
