@@ -270,7 +270,7 @@ export function ProgramCatalog({
         <table>
           <thead><tr><th>Kode &amp; Nama Program</th><th>Kategori &amp; Jadwal</th><th>Penyuluh / Lokasi</th><th>Kuota &amp; Alokasi</th><th>Status</th><th>Aksi</th></tr></thead>
           <tbody>{filtered.map((program) => {
-            const percent = program.capacity ? Math.min(100, program.filled / program.capacity * 100) : 0;
+            const percent = program.capacity ? Math.round(Math.min(100, program.filled / program.capacity * 100) * 100) / 100 : 0;
             return <tr key={program.id}>
               <td><strong>{program.name}</strong><span className={styles.muted}>{program.code}</span></td>
               <td><strong>{program.category}</strong><span className={styles.muted}>{program.duration}</span></td>
