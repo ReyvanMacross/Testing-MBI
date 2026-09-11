@@ -12,10 +12,12 @@ on:
   push:
     branches:
       - main
+      - diskominfo
       - dinsos
       - disnaker
       - feat/diskop-ukm-mvp
       - feat/disdik-mvp
+      - feat/kecamatan-mvp
       - feat/dp3a-mvp
       - feat/disdagin-mvp
       - feat/dkpp-mvp

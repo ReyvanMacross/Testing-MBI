@@ -13,6 +13,16 @@ await loadProjectEnvironment();
 const npmCli = process.env.npm_execpath;
 assert.ok(npmCli, "Jalankan verifikasi melalui npm run verify:integration-hosted.");
 const baseUrl = process.env.MBI_TEST_BASE_URL ?? "http://localhost:3000";
+const testUrl = new URL(baseUrl);
+const testPort = testUrl.port || "3000";
+process.env.APP_ORIGIN ??= testUrl.origin;
+
+assert.match(testPort, /^\d+$/u, "Port MBI_TEST_BASE_URL tidak valid.");
+assert.equal(
+  new URL(process.env.APP_ORIGIN).origin,
+  testUrl.origin,
+  "APP_ORIGIN harus sama dengan origin MBI_TEST_BASE_URL.",
+);
 
 function runProcess(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -46,7 +56,7 @@ async function serverIsReady() {
 async function startServer() {
   if (await serverIsReady()) return null;
   const nextCli = path.join(PROJECT_ROOT, "node_modules", "next", "dist", "bin", "next");
-  const server = spawn(process.execPath, [nextCli, "start"], {
+  const server = spawn(process.execPath, [nextCli, "start", "--port", testPort], {
     cwd: PROJECT_ROOT,
     env: process.env,
     stdio: "inherit",

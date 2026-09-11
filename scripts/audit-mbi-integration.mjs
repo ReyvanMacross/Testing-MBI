@@ -15,6 +15,7 @@ const baselines = {
   dp3a: "b36be9f9d4d007116c4f074e904733cba4275a0f",
   disdagin: "5cadabdde950b85343832ee6a4fd7bbd1cc755bf",
   dkpp: "8608ef1c465dbe6b0d91052a1cd5de68e362972e",
+  disbudpar: "b0e3dc39b6505b7061beaa100e06e2d6a1b1a2ca",
 };
 
 for (const [module, commit] of Object.entries(baselines)) {

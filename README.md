@@ -18,7 +18,7 @@ Copy-Item .env.test.example .env.test.local
 npm.cmd run check:integration-env
 ```
 
-Petunjuk akun Kecamatan, DP3A, Disdagin, dan onboarding hosted staging tersedia di [docs/integration/staging-environment.md](docs/integration/staging-environment.md).
+Petunjuk akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, dan onboarding hosted staging tersedia di [docs/integration/staging-environment.md](docs/integration/staging-environment.md).
 
 ## Cakupan aplikasi
 
@@ -27,7 +27,18 @@ Petunjuk akun Kecamatan, DP3A, Disdagin, dan onboarding hosted staging tersedia 
 - Pada layar sampai 900 px, panel kiri disembunyikan dan form dipusatkan.
 - Tombol mata menampilkan/menyembunyikan kata sandi tanpa mengubah nilainya.
 - Form login memakai Supabase Auth dan mengarahkan pengguna berdasarkan role serta OPD.
-- Baseline integrasi mencakup Diskominfo, Dinsos, Disnaker, Diskop UKM, Disdik, Kecamatan, DP3A, dan Disdagin.
+- Baseline integrasi mencakup:
+  - Diskominfo
+  - Dinsos
+  - Disnaker
+  - Diskop UKM
+  - Disdik
+  - Kecamatan
+  - DP3A
+  - Disdagin
+  - DKPP
+  - Disbudpar
+- Selama tahap prototype, source-of-truth pengembangan adalah branch `integration/mbi-v1`. Branch `main` diperbarui setelah seluruh prototype selesai dan baseline final tervalidasi.
 - Data warga menggunakan tabel bersama `warga`; tabel domain OPD hanya menyimpan data proses dan layanan khusus.
 
 ## Pemeriksaan

@@ -1,40 +1,41 @@
 # Baseline Integrasi MBI v1
 
-Branch integrasi `integration/mbi-v1` dibentuk dari baseline Diskominfo, kemudian menggabungkan Dinsos, Disnaker, Diskop UKM, dan Disdik secara berurutan. Baseline ini tidak mengubah fitur modul yang sudah dibekukan.
+Branch `integration/mbi-v1` adalah source-of-truth pengembangan selama tahap prototype. Branch ini menyatukan sepuluh modul MBI pada satu schema dan satu project Supabase. Branch `main` tetap ditahan sampai seluruh prototype selesai dan integrasi final tervalidasi.
 
-| Modul | Branch | Commit baseline | Status sebelum integrasi |
+| Modul | Branch asal | Commit baseline | Gate yang dikunci |
 | --- | --- | --- | --- |
-| Diskominfo | `diskominfo` | `01977c7b32b010ce5ba19b7dca5e9a76f1758881` | Build, lint, migration chain, peta desil, integration health, dan activity log PASS. |
-| Dinsos | `dinsos` | `0f1b92a564cf93bf7714e2e68c45055e37bcc881` | Build, workflow, warga, path, API guard, dan migration chain PASS. Fixture lama membutuhkan kompatibilitas hardening dari baseline berikutnya. |
-| Disnaker | `disnaker` | `9b0c502cc4fc5c49430648b4d6adbac6beb27cf3` | Workflow real DB, quota/concurrency, API guard, migration chain, dan build PASS. |
-| Diskop UKM | `feat/diskop-ukm-mvp` | `e75a761bc1bf04cd8b2e487a7e1f71f7d3009d40` | Workflow real DB, quota/concurrency, API guard, migration chain, build, serta koreksi isolasi fixture Dinsos PASS. |
-| Disdik | `feat/disdik-mvp` | `f32fa8050c904e001832f623e3c1b0395790b65a` | Implementasi, kontrak source, API guard, build, dan E2E preview lokal 3/3 PASS. Hosted migration/RLS/RPC belum tervalidasi. |
+| Diskominfo | `diskominfo` | `01977c7b32b010ce5ba19b7dca5e9a76f1758881` | Dashboard integrasi, peta desil, integration health, dan activity log. |
+| Dinsos | `dinsos` | `0f1b92a564cf93bf7714e2e68c45055e37bcc881` | Workflow kasus, data warga, asesmen, path, referral, dan concurrency. |
+| Disnaker | `disnaker` | `9b0c502cc4fc5c49430648b4d6adbac6beb27cf3` | Workflow intervensi, kuota, laporan, API guard, dan concurrency. |
+| Diskop UKM | `feat/diskop-ukm-mvp` | `e75a761bc1bf04cd8b2e487a7e1f71f7d3009d40` | Workflow pendampingan, kuota, laporan, API guard, dan concurrency. |
+| Disdik | `feat/disdik-mvp` | `f32fa8050c904e001832f623e3c1b0395790b65a` | Workflow pendidikan, kontrak, API guard, RLS, dan E2E. |
+| Kecamatan | `feat/kecamatan-mvp` | `96e55163bfae1598dcb29b730e40dfdeebf725b5` | Usulan warga, survei, persetujuan, referral, yurisdiksi, dan concurrency. |
+| DP3A | `feat/dp3a-mvp` | `b36be9f9d4d007116c4f074e904733cba4275a0f` | Workflow intervensi, kuota, laporan, API guard, dan concurrency. |
+| Disdagin | `feat/disdagin-mvp` | `5cadabdde950b85343832ee6a4fd7bbd1cc755bf` | Workflow usaha, kuota, laporan omzet, API guard, dan concurrency. |
+| DKPP | `feat/dkpp-mvp` | `8608ef1c465dbe6b0d91052a1cd5de68e362972e` | Workflow ketahanan pangan, kuota, laporan panen, API guard, dan concurrency. |
+| Disbudpar | `feat/disbudpar-mvp` | `b0e3dc39b6505b7061beaa100e06e2d6a1b1a2ca` | Workflow ekonomi kreatif, kuota, laporan pembinaan, API guard, dan concurrency. |
 
-## Hasil merge berurutan
+`npm run audit:integration` memastikan semua commit baseline di atas adalah ancestor dari `HEAD`. Audit yang sama membaca migration langsung dari `supabase/migrations`, sehingga jumlah migration tidak disalin secara manual ke dokumen ini.
 
-1. Diskominfo menjadi pangkal branch integrasi.
-2. Dinsos digabung tanpa konflik source.
-3. Disnaker digabung tanpa konflik source dan tes Dinsos yang terkait referral kembali PASS.
-4. Diskop UKM digabung tanpa konflik source dan seluruh regression test Dinsos/Disnaker yang dijalankan PASS.
-5. Disdik digabung tanpa konflik source.
+Fix custom test port dari DP3A `1e13b987699d43a039015286a077301c58daf43e` dipindahkan secara khusus ke jalur integrasi tanpa menggabungkan ulang branch DP3A yang sudah tertinggal. `playwright.config.ts` dan hosted verifier mengambil port dari `MBI_TEST_BASE_URL`, menolak nilai port yang tidak valid, dan memastikan `APP_ORIGIN` memakai origin yang sama.
 
-Audit ancestor, shared schema, migration order, RLS declaration, routing auth, API guard, production preview guard, PII, dan secret dijalankan melalui `npm run audit:integration`.
+## Gate integrasi
 
-Validasi akhir lokal menghasilkan:
+Validasi source menjalankan:
 
-- 5 baseline commit menjadi ancestor branch integrasi;
-- 30 migration unik dan monotonik;
-- build dan TypeScript PASS;
-- seluruh API guard Dinsos, Disnaker, Diskop, dan Disdik PASS;
-- E2E login, home routing, isolasi route, dan masking NIK untuk 5 akun OPD PASS dengan preview OFF;
-- audit hosted untuk integritas domain, privasi, security, dan fixture PASS dengan fixture tersisa 0.
+- ancestor sepuluh baseline, shared schema, urutan migration, RLS, routing auth, production preview guard, dan API guard seluruh OPD;
+- kontrak source setiap modul, pemindaian PII dan secret, lint, TypeScript, build, serta audit dependency;
+- pemeriksaan bahwa seluruh akun integrasi mengarah ke satu project Supabase.
 
-## Batas validasi
+Validasi hosted menjalankan:
 
-E2E integrasi lokal membuktikan login, routing home, isolasi route antar-OPD, rendering modul, dan masking NIK. Alur data tunggal dari Dinsos menuju seluruh OPD serta agregasi hasil di Diskominfo tetap menjadi gate hosted staging.
+- workflow real database dan concurrency seluruh modul;
+- login, home routing, isolasi route, masking NIK, dan E2E integrasi sepuluh akun;
+- E2E Kecamatan, DP3A, aliran Kecamatan–DP3A, Disdagin, DKPP, dan Disbudpar;
+- audit schema/RLS/RPC lintas OPD dan cleanup fixture dengan data demo persisten tetap tersedia.
 
-Hosted database yang terkonfigurasi sudah memiliki tabel Disdik dari migration `202609100001_disdik_workflow_foundation.sql`, tetapi RPC `disdik_start_intervention` dari migration `202609100002_disdik_operational_rpcs.sql` belum tersedia di schema cache (`PGRST202`). Karena itu workflow Disdik real DB dan migration hardening `003` belum boleh dinyatakan tervalidasi. Preview tetap OFF saat pemeriksaan ini; kegagalan schema tidak diganti dengan fallback.
+Freeze terakhir menghasilkan 605 pemeriksaan staging tanpa blocker, PII 0, secret 0, dan fixture pengujian tersisa 0. Data demo persisten tetap berjumlah 24 warga.
 
-Status yang diizinkan saat ini:
+Status baseline saat ini:
 
-> **LOCAL INTEGRATION VALIDATED — HOSTED STAGING PENDING**
+> **HOSTED STAGING VALIDATED — READY FOR NEXT MVP**

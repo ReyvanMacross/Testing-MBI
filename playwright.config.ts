@@ -29,10 +29,15 @@ loadEnvironmentFile(".env.test.local");
 loadEnvironmentFile(".env.local");
 
 const baseURL = process.env.MBI_TEST_BASE_URL ?? "http://localhost:3000";
-const testPort = new URL(baseURL).port || "3000";
+const testUrl = new URL(baseURL);
+const testPort = testUrl.port || "3000";
+process.env.APP_ORIGIN ??= testUrl.origin;
 
 if (!/^\d+$/u.test(testPort)) {
   throw new Error("Port MBI_TEST_BASE_URL tidak valid.");
+}
+if (new URL(process.env.APP_ORIGIN).origin !== testUrl.origin) {
+  throw new Error("APP_ORIGIN harus sama dengan origin MBI_TEST_BASE_URL.");
 }
 
 export default defineConfig({
