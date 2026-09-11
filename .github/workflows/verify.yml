@@ -17,6 +17,7 @@ on:
       - feat/diskop-ukm-mvp
       - feat/disdik-mvp
       - feat/dp3a-mvp
+      - feat/disdagin-mvp
       - integration/**
 
 permissions:
@@ -35,6 +36,7 @@ jobs:
       DISKOP_PREVIEW_MODE: "false"
       DISDIK_PREVIEW_MODE: "false"
       DP3A_PREVIEW_MODE: "false"
+      DISDAGIN_PREVIEW_MODE: "false"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,6 +54,7 @@ jobs:
       - run: npm run test:disdik-contract
       - run: npm run test:kecamatan-contract
       - run: npm run test:dp3a-contract
+      - run: npm run test:disdagin-contract
       - run: npm run scan:pii
       - run: npm run scan:secrets
       - run: npm run audit:dinsos-api-guards
@@ -60,6 +63,7 @@ jobs:
       - run: npm run audit:disdik-api-guards
       - run: npm run audit:kecamatan-api-guards
       - run: npm run audit:dp3a-api-guards
+      - run: npm run audit:disdagin-api-guards
 
   hosted-staging-verification:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_hosted_staging }}
@@ -77,6 +81,11 @@ jobs:
       DISKOP_PREVIEW_MODE: "false"
       DISDIK_PREVIEW_MODE: "false"
       DP3A_PREVIEW_MODE: "false"
+      DISDAGIN_PREVIEW_MODE: "false"
+      SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
+      SUPABASE_TEST_ADMIN_PASSWORD: ${{ secrets.SUPABASE_TEST_ADMIN_PASSWORD }}
+      SUPABASE_TEST_FIELD_PASSWORD: ${{ secrets.SUPABASE_TEST_FIELD_PASSWORD }}
+      SUPABASE_TEST_VILLAGE_PASSWORD: ${{ secrets.SUPABASE_TEST_VILLAGE_PASSWORD }}
       E2E_ADMIN_IDENTIFIER: ${{ secrets.E2E_ADMIN_IDENTIFIER }}
       E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
       E2E_DINSOS_IDENTIFIER: ${{ secrets.E2E_DINSOS_IDENTIFIER }}
@@ -91,6 +100,8 @@ jobs:
       E2E_KECAMATAN_PASSWORD: ${{ secrets.E2E_KECAMATAN_PASSWORD }}
       E2E_DP3A_IDENTIFIER: ${{ secrets.E2E_DP3A_IDENTIFIER }}
       E2E_DP3A_PASSWORD: ${{ secrets.E2E_DP3A_PASSWORD }}
+      E2E_DISDAGIN_IDENTIFIER: ${{ secrets.E2E_DISDAGIN_IDENTIFIER }}
+      E2E_DISDAGIN_PASSWORD: ${{ secrets.E2E_DISDAGIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -102,4 +113,6 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
+      - run: npm run check:integration-env
+      - run: npm run onboard:integration-actors
       - run: npm run verify:integration-hosted

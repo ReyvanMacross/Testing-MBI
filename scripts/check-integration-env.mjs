@@ -40,13 +40,13 @@ const accounts = [
   { label: "Disnaker", identifiers: ["E2E_DISNAKER_IDENTIFIER", "DISNAKER_ADMIN_USERNAME"], passwords: ["E2E_DISNAKER_PASSWORD", "DISNAKER_ADMIN_PASSWORD"] },
   { label: "Diskop UKM", identifiers: ["E2E_DISKOP_IDENTIFIER", "DISKOP_ADMIN_USERNAME"], passwords: ["E2E_DISKOP_PASSWORD", "DISKOP_ADMIN_PASSWORD"] },
   { label: "Disdik", identifiers: ["E2E_DISDIK_IDENTIFIER", "DISDIK_ADMIN_USERNAME"], passwords: ["E2E_DISDIK_PASSWORD", "DISDIK_ADMIN_PASSWORD"] },
-  { label: "Kecamatan", identifiers: ["E2E_KECAMATAN_IDENTIFIER", "KECAMATAN_ADMIN_USERNAME"], passwords: ["E2E_KECAMATAN_PASSWORD", "KECAMATAN_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
-  { label: "DP3A", identifiers: ["E2E_DP3A_IDENTIFIER", "DP3A_ADMIN_USERNAME"], passwords: ["E2E_DP3A_PASSWORD", "DP3A_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
-  { label: "Disdagin", identifiers: ["E2E_DISDAGIN_IDENTIFIER", "DISDAGIN_ADMIN_USERNAME"], passwords: ["E2E_DISDAGIN_PASSWORD", "DISDAGIN_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
+  { label: "Kecamatan", defaultIdentifier: "admin.kecamatan", identifiers: ["E2E_KECAMATAN_IDENTIFIER", "KECAMATAN_ADMIN_USERNAME"], passwords: ["E2E_KECAMATAN_PASSWORD", "KECAMATAN_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
+  { label: "DP3A", defaultIdentifier: "admin.dp3a", identifiers: ["E2E_DP3A_IDENTIFIER", "DP3A_ADMIN_USERNAME"], passwords: ["E2E_DP3A_PASSWORD", "DP3A_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
+  { label: "Disdagin", defaultIdentifier: "admin.disdagin", identifiers: ["E2E_DISDAGIN_IDENTIFIER", "DISDAGIN_ADMIN_USERNAME"], passwords: ["E2E_DISDAGIN_PASSWORD", "DISDAGIN_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
 ];
 
 for (const account of accounts) {
-  requireOne(`${account.label} identifier`, ...account.identifiers);
+  if (!account.defaultIdentifier) requireOne(`${account.label} identifier`, ...account.identifiers);
   requirePassword(`${account.label} password`, 12, ...account.passwords);
 }
 
