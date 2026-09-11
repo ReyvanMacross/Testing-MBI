@@ -6,7 +6,7 @@ const SCRIPT_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 
 export const PROJECT_ROOT = path.resolve(SCRIPT_DIRECTORY, "../..");
 
-function parseEnvFile(content) {
+export function parseEnvFile(content) {
   const values = new Map();
 
   for (const sourceLine of content.replace(/^\uFEFF/, "").split(/\r?\n/u)) {

@@ -124,6 +124,11 @@ for (const script of [
 ]) {
   assert.ok(packageJson.scripts?.[script], `Package script ${script} hilang setelah merge.`);
 }
+assert.match(
+  packageJson.scripts["onboard:integration-actors"],
+  /^npm run check:integration-env &&/u,
+  "Onboarding aktor integrasi wajib memeriksa kesamaan target Supabase terlebih dahulu.",
+);
 
 const environmentTemplate = await readFile(path.join(PROJECT_ROOT, ".env.test.example"), "utf8");
 for (const variable of [

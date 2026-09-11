@@ -10,7 +10,7 @@ Salin template aman, lalu isi nilai rahasia melalui penyimpanan rahasia tim:
 Copy-Item .env.test.example .env.test.local
 ```
 
-Jalankan pemeriksaan berikut. Pemeriksaan hanya menampilkan **nama** variabel yang kurang dan tidak pernah mencetak nilainya.
+Jalankan pemeriksaan berikut. Pemeriksaan hanya menampilkan **nama** variabel yang kurang dan tidak pernah mencetak nilainya. Pemeriksaan juga memastikan `.env.test.local`, `.env.local`, dan `.env.staging.local` menunjuk satu project Supabase yang sama.
 
 ```powershell
 npm.cmd run check:integration-env
@@ -32,7 +32,7 @@ Setelah migration tersedia dan `SUPABASE_SECRET_KEY` terisi, jalankan onboarding
 npm.cmd run onboard:integration-actors
 ```
 
-Perintah tersebut membuat atau memperbarui profil Kecamatan, DP3A, dan Disdagin, menyambungkan `auth_user_id`, lalu memverifikasi login OPD. Untuk Disdagin, `DISDAGIN_ADMIN_PROFILE_ID` bersifat opsional; ID baru dibuat saat profil belum ada.
+Perintah tersebut memeriksa target Supabase terlebih dahulu, kemudian membuat atau memperbarui profil Kecamatan, DP3A, dan Disdagin, menyambungkan `auth_user_id`, lalu memverifikasi login OPD. Untuk Disdagin, `DISDAGIN_ADMIN_PROFILE_ID` bersifat opsional; ID baru dibuat saat profil belum ada.
 
 Validasi lintas instansi dapat dijalankan setelah build dan server tersedia:
 

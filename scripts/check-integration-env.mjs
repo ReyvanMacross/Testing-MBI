@@ -1,9 +1,70 @@
-import { loadProjectEnvironment } from "./lib/project-env.mjs";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
+import { loadProjectEnvironment, parseEnvFile, PROJECT_ROOT } from "./lib/project-env.mjs";
 
 await loadProjectEnvironment();
 
 const missing = [];
 const invalid = [];
+const environmentFiles = [".env.test.local", ".env.local", ".env", ".env.staging.local"];
+const fileEnvironments = [];
+
+for (const file of environmentFiles) {
+  try {
+    fileEnvironments.push({ file, values: parseEnvFile(await readFile(path.join(PROJECT_ROOT, file), "utf8")) });
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
+function assertConsistentVariable(name, normalize = (value) => value) {
+  const assignments = fileEnvironments
+    .map(({ file, values }) => ({ file, value: values.get(name)?.trim() }))
+    .filter(({ value }) => value)
+    .map(({ file, value }) => ({ file, value: normalize(value) }));
+  if (new Set(assignments.map(({ value }) => value)).size > 1) {
+    invalid.push(`${name} berbeda antara ${assignments.map(({ file }) => file).join(", ")}`);
+  }
+}
+
+function projectRefFromApiUrl(value) {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname.match(/^([a-z0-9-]+)\.supabase\.co$/u)?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function projectRefFromDatabaseUrl(value) {
+  try {
+    const parsed = new URL(value);
+    const hostRef = parsed.hostname.toLowerCase().match(/^db\.([a-z0-9-]+)\.supabase\.(?:co|com)$/u)?.[1];
+    const userRef = decodeURIComponent(parsed.username).toLowerCase().match(/^postgres\.([a-z0-9-]+)$/u)?.[1];
+    return hostRef ?? userRef ?? null;
+  } catch {
+    return null;
+  }
+}
+
+assertConsistentVariable("NEXT_PUBLIC_SUPABASE_URL", (value) => value.replace(/\/+$/u, ""));
+assertConsistentVariable("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+assertConsistentVariable("SUPABASE_SECRET_KEY");
+assertConsistentVariable("SUPABASE_DB_URL");
+
+const projectRefs = [];
+for (const { file, values } of fileEnvironments) {
+  const apiUrl = values.get("NEXT_PUBLIC_SUPABASE_URL")?.trim();
+  const databaseUrl = values.get("SUPABASE_DB_URL")?.trim();
+  const apiRef = apiUrl ? projectRefFromApiUrl(apiUrl) : null;
+  const databaseRef = databaseUrl ? projectRefFromDatabaseUrl(databaseUrl) : null;
+  if (apiRef) projectRefs.push({ file, ref: apiRef });
+  if (databaseRef) projectRefs.push({ file, ref: databaseRef });
+}
+if (new Set(projectRefs.map(({ ref }) => ref)).size > 1) {
+  invalid.push(`Project Supabase berbeda antara ${[...new Set(projectRefs.map(({ file }) => file))].join(", ")}`);
+}
 
 function firstValue(...names) {
   for (const name of names) {
@@ -60,5 +121,5 @@ if (missing.length || invalid.length) {
   if (invalid.length) console.error(`Konfigurasi tidak valid:\n- ${invalid.join("\n- ")}`);
   process.exitCode = 1;
 } else {
-  console.log(`Environment integrasi MBI: ${accounts.length} akun dan konfigurasi Supabase PASS`);
+  console.log(`Environment integrasi MBI: ${accounts.length} akun dan satu target Supabase PASS`);
 }
