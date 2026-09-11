@@ -106,8 +106,11 @@ const desilPage = await fetch(`${BASE_URL}/dinsos/warga?desil=${sampleDesilEntry
 assert.equal(desilPage.status, 200);
 const verifiedPage = await fetch(`${BASE_URL}/dinsos/warga?status=TERVERIFIKASI`, { headers: { Cookie: dinsosCookie } });
 assert.match(await verifiedPage.text(), /TERVERIFIKASI/);
-const canonicalFilter = await fetch(`${BASE_URL}/dinsos/warga?kelurahan=${kelurahanResult.data[0].id}`, { headers: { Cookie: dinsosCookie } });
-assert.match(await canonicalFilter.text(), /Tidak ada warga yang sesuai dengan filter/);
+const canonicalKelurahanId = sample.kelurahan_id ?? kelurahanResult.data[0].id;
+const canonicalFilter = await fetch(`${BASE_URL}/dinsos/warga?kelurahan=${canonicalKelurahanId}`, { headers: { Cookie: dinsosCookie } });
+const canonicalFilterHtml = await canonicalFilter.text();
+if (sample.kelurahan_id) assert.ok(canonicalFilterHtml.includes(sample.nama_lengkap));
+else assert.match(canonicalFilterHtml, /Tidak ada warga yang sesuai dengan filter/);
 const pageTwo = await fetch(`${BASE_URL}/dinsos/warga?page=2`, { headers: { Cookie: dinsosCookie } });
 assert.equal(pageTwo.status, 200);
 assert.match(await pageTwo.text(), /aria-current="page">2/);
@@ -189,7 +192,7 @@ console.log(JSON.stringify({
   summary: { total: totalResult.count, verified: expectedVerified, unverified: totalResult.count - expectedVerified },
   searchName: "PASS",
   searchNik: "PASS",
-  filterKelurahan: "PASS (0 resolved warga)",
+  filterKelurahan: sample.kelurahan_id ? "PASS (resolved warga)" : "PASS (0 resolved warga)",
   filterDesil: "PASS",
   filterVerification: "PASS",
   pagination: "PASS",

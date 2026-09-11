@@ -83,6 +83,9 @@ const requiredFiles = [
   "scripts/audit-kecamatan-api-guards.mjs",
   "scripts/audit-dp3a-api-guards.mjs",
   "tests/e2e/kecamatan-dp3a.spec.ts",
+  "scripts/dev/seed-staging-warga-demo.mjs",
+  "scripts/audit-staging-warga-demo.mjs",
+  "docs/integration/warga-data-dependencies.md",
 ];
 for (const file of requiredFiles) {
   assert.ok(tracked.stdout.split("\0").includes(file), `${file} belum tergabung.`);

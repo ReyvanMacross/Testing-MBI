@@ -6,6 +6,7 @@ import {
   cleanupIntegrationBaseFixtures,
   seedIntegrationBaseFixtures,
 } from "./dev/integration-base-fixture-lib.mjs";
+import { seedStagingWargaDemo } from "./dev/staging-warga-demo-lib.mjs";
 import { loadProjectEnvironment, PROJECT_ROOT } from "./lib/project-env.mjs";
 
 await loadProjectEnvironment();
@@ -86,12 +87,15 @@ const workflowScripts = [
 let server;
 let primaryError;
 try {
+  const demo = await seedStagingWargaDemo();
+  console.log(`Warga prototype staging tersedia: ${demo.citizens}.`);
   const count = await seedIntegrationBaseFixtures();
   console.log(`Fixture dasar integrasi dibuat: ${count} warga sintetis.`);
   server = await startServer();
   for (const script of workflowScripts) await runNpmScript(script);
   const cleaned = await cleanupIntegrationBaseFixtures();
   console.log(`Fixture dasar integrasi dibersihkan: ${cleaned} warga sintetis.`);
+  await runNpmScript("staging:audit-warga");
   await runNpmScript("staging:audit-integration");
 } catch (error) {
   primaryError = error;
