@@ -67,6 +67,18 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "private, no-store, max-age=0" },
         ],
       },
+      {
+        source: "/disdagin/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+        ],
+      },
+      {
+        source: "/api/disdagin/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+        ],
+      },
     ];
   },
 };

@@ -66,6 +66,14 @@ const accounts: Account[] = [
     blockedRoute: "/kecamatan",
     heading: "Rujukan Masuk & Penanganan Kasus",
   },
+  {
+    name: "Disdagin",
+    identifier: process.env.E2E_DISDAGIN_IDENTIFIER,
+    password: process.env.E2E_DISDAGIN_PASSWORD,
+    home: "/disdagin",
+    blockedRoute: "/dp3a",
+    heading: "Rujukan Masuk & Intervensi",
+  },
 ];
 
 async function login(page: Page, account: Account) {
