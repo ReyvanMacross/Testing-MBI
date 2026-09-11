@@ -29,6 +29,11 @@ loadEnvironmentFile(".env.test.local");
 loadEnvironmentFile(".env.local");
 
 const baseURL = process.env.MBI_TEST_BASE_URL ?? "http://localhost:3000";
+const testPort = new URL(baseURL).port || "3000";
+
+if (!/^\d+$/u.test(testPort)) {
+  throw new Error("Port MBI_TEST_BASE_URL tidak valid.");
+}
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -39,7 +44,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npm run start",
+    command: `npm run start -- --port ${testPort}`,
     url: `${baseURL}/login`,
     reuseExistingServer: true,
     timeout: 120_000,
