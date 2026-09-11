@@ -11,6 +11,7 @@ const audits = [
   ["Diskop UKM", "diskop-final-schema-check.sql"],
   ["Disdik", "disdik-final-schema-check.sql"],
   ["Kecamatan", "kecamatan-final-schema-check.sql"],
+  ["DP3A", "dp3a-final-schema-check.sql"],
 ];
 const blocker = /^(?:MISSING|BLOCKER|DISABLED|SECURITY_MODE_MISMATCH|SEARCH_PATH_MISSING)/u;
 

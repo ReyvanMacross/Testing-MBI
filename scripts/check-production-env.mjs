@@ -23,7 +23,7 @@ if (missing.length > 0) {
   process.exitCode = 1;
 }
 
-for (const name of ["DISNAKER_PREVIEW_MODE", "DISKOP_PREVIEW_MODE", "DISDIK_PREVIEW_MODE"]) {
+for (const name of ["DISNAKER_PREVIEW_MODE", "DISKOP_PREVIEW_MODE", "DISDIK_PREVIEW_MODE", "DP3A_PREVIEW_MODE"]) {
   if (production && process.env[name] === "true") {
     console.error(`${name}=true is forbidden in production.`);
     process.exitCode = 1;
