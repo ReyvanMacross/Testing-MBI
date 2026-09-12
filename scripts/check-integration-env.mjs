@@ -109,6 +109,7 @@ const accounts = [
   { label: "Cipta Bintar", defaultIdentifier: "admin.cipta-bintar", identifiers: ["E2E_CIPTA_BINTAR_IDENTIFIER", "CIPTA_BINTAR_ADMIN_USERNAME"], passwords: ["E2E_CIPTA_BINTAR_PASSWORD", "CIPTA_BINTAR_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
   { label: "Bapperida", defaultIdentifier: "admin.bapperida", identifiers: ["E2E_BAPPERIDA_IDENTIFIER", "BAPPERIDA_ADMIN_USERNAME"], passwords: ["E2E_BAPPERIDA_PASSWORD", "BAPPERIDA_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
   { label: "Wali Kota", defaultIdentifier: "admin.walikota", identifiers: ["E2E_WALIKOTA_IDENTIFIER", "WALIKOTA_ADMIN_USERNAME"], passwords: ["E2E_WALIKOTA_PASSWORD", "WALIKOTA_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
+  { label: "Kelurahan", defaultIdentifier: "admin.kelurahan", identifiers: ["E2E_KELURAHAN_IDENTIFIER", "KELURAHAN_ADMIN_USERNAME"], passwords: ["E2E_KELURAHAN_PASSWORD", "KELURAHAN_ADMIN_PASSWORD", "SUPABASE_TEST_VILLAGE_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
 ];
 
 for (const account of accounts) {

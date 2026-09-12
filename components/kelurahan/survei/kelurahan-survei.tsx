@@ -1,0 +1,15 @@
+"use client";
+
+import { CheckCircle2, ClipboardCheck, Eye } from "lucide-react";
+import { useMemo, useState } from "react";
+
+import { ProposalDrawer, StatusBadge, SurveyDialog } from "@/components/kelurahan/shared/workflow-panels";
+import type { KelurahanData, KelurahanProposal } from "@/lib/kelurahan/data";
+import styles from "@/components/kelurahan/shared/kelurahan-ui.module.css";
+
+export function KelurahanSurvei({data}:{data:KelurahanData}){
+  const[selected,setSelected]=useState<KelurahanProposal|null>(null);const[detail,setDetail]=useState(false);const[search,setSearch]=useState("");
+  const rows=useMemo(()=>data.proposals.filter((row)=>row.survey).filter((row)=>!search||`${row.name} ${row.maskedNik}`.toLowerCase().includes(search.toLowerCase())),[data.proposals,search]);
+  const active=rows.filter((row)=>row.survey?.status==="DITUGASKAN").length;const done=rows.filter((row)=>row.survey?.status==="SELESAI").length;function close(){setSelected(null);setDetail(false);}
+  return <section aria-labelledby="survey-page-title"><div className={styles.pageHeading}><div><h1 id="survey-page-title">Survei Lapangan Kelurahan {data.actor.village}</h1><p>Penugasan dan hasil verifikasi faktual PSM untuk usulan warga Kelurahan.</p></div></div><div className={styles.summaryGrid}><article className={styles.summaryCard}><span className={styles.summaryIcon}><ClipboardCheck/></span><div><p>Survei Aktif</p><strong>{active}</strong><span className={styles.muted}>Menunggu hasil lapangan</span></div></article><article className={styles.summaryCard}><span className={styles.summaryIcon}><CheckCircle2/></span><div><p>Survei Selesai</p><strong>{done}</strong><span className={styles.muted}>Siap dikirim ke Kecamatan</span></div></article></div><section className={styles.card}><div className={styles.filters}><h2>Daftar Penugasan Survei</h2><input className={styles.searchBox} aria-label="Cari survei" placeholder="NIK atau Nama..." value={search} onChange={(event)=>setSearch(event.target.value)}/></div><div className={styles.desktopTable}><table><thead><tr><th>Warga</th><th>Lokasi</th><th>Surveyor</th><th>Desil</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{rows.map((row)=><tr key={row.id}><td><strong>{row.name}</strong><span className={styles.muted}>{row.maskedNik}</span></td><td>RT {row.rt} / RW {row.rw}</td><td>{row.survey?.surveyor}</td><td>Desil {row.survey?.factualDesil??row.estimatedDesil}</td><td><StatusBadge status={row.status}/></td><td>{row.survey?.status==="DITUGASKAN"?<button className={`${styles.action} ${styles.actionPrimary}`} onClick={()=>setSelected(row)}>Isi Hasil Survei</button>:<button className={styles.action} onClick={()=>{setSelected(row);setDetail(true);}}><Eye size={16}/>Detail</button>}</td></tr>)}</tbody></table></div>{!rows.length&&<p className={styles.emptyState}>Belum ada penugasan survei lapangan.</p>}</section>{selected&&!detail&&<SurveyDialog proposal={selected} close={close}/>} {selected&&detail&&<ProposalDrawer proposal={selected} data={data} close={close}/>}</section>;
+}

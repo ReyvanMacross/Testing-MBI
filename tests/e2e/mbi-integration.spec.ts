@@ -114,6 +114,14 @@ const accounts: Account[] = [
     blockedRoute: "/bapperida",
     heading: "Dashboard Outcome",
   },
+  {
+    name: "Kelurahan",
+    identifier: process.env.E2E_KELURAHAN_IDENTIFIER || process.env.KELURAHAN_ADMIN_USERNAME || "admin.kelurahan",
+    password: process.env.E2E_KELURAHAN_PASSWORD || process.env.KELURAHAN_ADMIN_PASSWORD || process.env.SUPABASE_TEST_VILLAGE_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
+    home: "/kelurahan",
+    blockedRoute: "/kecamatan",
+    heading: "Antrian Kerja Verifikasi Kelurahan",
+  },
 ];
 
 async function login(page: Page, account: Account) {

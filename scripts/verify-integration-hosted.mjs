@@ -102,6 +102,9 @@ const workflowScripts = [
   "test:walikota",
   "test:walikota-concurrency",
   "staging:seed-walikota-demo",
+  "test:kelurahan",
+  "test:kelurahan-concurrency",
+  "staging:seed-kelurahan-demo",
   "test:e2e:integration",
   "test:e2e:kecamatan",
   "test:e2e:dp3a",
@@ -112,6 +115,7 @@ const workflowScripts = [
   "test:e2e:cipta-bintar",
   "test:e2e:bapperida",
   "test:e2e:walikota",
+  "test:e2e:kelurahan",
 ];
 
 let server;

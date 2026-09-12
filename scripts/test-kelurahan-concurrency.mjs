@@ -1,0 +1,9 @@
+import assert from "node:assert/strict";
+import { createClient } from "@supabase/supabase-js";
+
+import { cleanupKelurahanFixtures,seedKelurahanFixtures } from "./dev/kelurahan-fixture-lib.mjs";
+import { getSupabaseAdminEnvironment,loadProjectEnvironment } from "./lib/project-env.mjs";
+
+await loadProjectEnvironment();const{supabaseUrl,supabaseSecretKey}=getSupabaseAdminEnvironment();const db=createClient(supabaseUrl,supabaseSecretKey,{auth:{persistSession:false,autoRefreshToken:false}});let primaryError;
+try{const state=await seedKelurahanFixtures();const ready=state.proposals.ready;const params={p_proposal_id:ready.id,p_actor_id:state.actor.id,p_note:"Berkas verifikasi lengkap dan dikirim ke Kecamatan melalui pengujian concurrency terkontrol.",p_expected_version:ready.version};const results=await Promise.all([db.rpc("kelurahan_send_to_kecamatan",params),db.rpc("kelurahan_send_to_kecamatan",params)]);assert.equal(results.filter((row)=>!row.error).length,1,"Tepat satu handoff harus berhasil.");assert.equal(results.filter((row)=>row.error).length,1,"Handoff duplikat harus ditolak.");const local=await db.from("kelurahan_usulan").select("status,kecamatan_usulan_id,version").eq("id",ready.id).single();if(local.error)throw local.error;assert.equal(local.data.status,"TERKIRIM_KECAMATAN");assert.equal(local.data.version,ready.version+1);const linked=await db.from("kecamatan_warga_usulan").select("id",{count:"exact"}).eq("warga_id",state.citizens.ready.id);if(linked.error)throw linked.error;assert.equal(linked.count,1,"Concurrency tidak boleh membuat dua antrean Kecamatan.");console.log("Optimistic concurrency handoff Kelurahan ke Kecamatan: PASS");
+}catch(error){primaryError=error;}finally{try{await cleanupKelurahanFixtures();}catch(cleanupError){if(!primaryError)primaryError=cleanupError;else console.error("Cleanup concurrency Kelurahan juga gagal:",cleanupError);}}if(primaryError)throw primaryError;

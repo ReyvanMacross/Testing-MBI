@@ -58,3 +58,11 @@ Bapperida tidak menyalin tabel intervensi OPD. Read model `bapperida_v_cross_opd
 Branch `feat/walikota-mvp` dibangun langsung dari freeze integrasi `7c80a64ecffa37a64a4c3def90f5beab858be4a0`. Baseline `fdaf12e235ca5ab47b954efa9c4ee700bee1a6d5` menjadikan Wali Kota lapisan eksekutif read-heavy di atas outcome lintas OPD dan rekomendasi Bapperida. Dashboard membaca view agregasi bersama dan memakai peta Diskominfo. Schema baru dibatasi pada `walikota_decisions`, `walikota_dispositions`, dan `walikota_decision_events`; tidak ada salinan warga, referral, program, atau outcome operasional.
 
 Aktor memakai role `WALIKOTA` dan kode OPD `WALIKOTA`. Mutasi hanya tersedia melalui RPC transaksional untuk menyetujui rekomendasi, meminta revisi, menetapkan prioritas, menyimpan catatan pimpinan, dan menerbitkan disposisi dengan optimistic concurrency.
+
+## Kandidat Kelurahan
+
+Branch `feat/kelurahan-mvp` dibangun langsung dari freeze integrasi 13 modul `275d6d61c3975d8e32837f6023cb488df70e6d38`. Kandidat ini menambahkan antrean verifikasi RT/RW, penugasan dan hasil survei faktual PSM, dokumen metadata, timeline, helpdesk, serta handoff ke Kecamatan.
+
+Kelurahan memakai `warga`, `master_wilayah`, dan `master_program_layanan` sebagai data bersama. Tabel `kelurahan_*` hanya menyimpan pekerjaan lokal sebelum handoff. RPC `kelurahan_send_to_kecamatan` mengunci usulan dengan optimistic concurrency, lalu membuat `kecamatan_warga_usulan` dan `kecamatan_survei` dalam satu transaksi agar hasil Kelurahan langsung masuk antrean review Kecamatan tanpa membuat referral atau salinan warga.
+
+Baseline resmi tetap 13 modul sampai kandidat Kelurahan lulus hosted staging, direview, dan dikunci pada `integration/mbi-v1`.

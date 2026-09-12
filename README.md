@@ -18,7 +18,7 @@ Copy-Item .env.test.example .env.test.local
 npm.cmd run check:integration-env
 ```
 
-Petunjuk akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, Bapperida, Wali Kota, dan onboarding hosted staging tersedia di [docs/integration/staging-environment.md](docs/integration/staging-environment.md).
+Petunjuk akun Kecamatan, Kelurahan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, Bapperida, Wali Kota, dan onboarding hosted staging tersedia di [docs/integration/staging-environment.md](docs/integration/staging-environment.md).
 
 ## Cakupan aplikasi
 
@@ -44,6 +44,7 @@ Petunjuk akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, Bapperid
 - Baseline resmi tiga belas modul mencakup Bapperida dengan kode OPD canonical `BAPPERIDA`, route `/bapperida`, dan schema `bapperida_*`. Modul ini membaca outcome dari `referral_mbi`, `warga`, master bersama, dan hasil OPD; tabel `bapperida_*` hanya menyimpan target, snapshot evaluasi, rekomendasi koordinasi, penerima, dan riwayat keputusan.
 - Peta Bapperida memakai geometri, statistik desil, serta drill-down kecamatan/kelurahan yang sama dengan Diskominfo agar tidak ada salinan aset peta.
 - Wali Kota memakai role canonical `WALIKOTA`, kode OPD `WALIKOTA`, dan route `/walikota`. Lapisan ini membaca outcome lintas modul serta rekomendasi Bapperida; schema `walikota_*` hanya menyimpan keputusan, disposisi, dan event audit eksekutif.
+- Kandidat modul ke-14, Kelurahan, memakai role canonical `Operator Kelurahan` yang terikat pada satu `master_wilayah` jenis `KELURAHAN`. Route `/kelurahan` mengelola verifikasi RT/RW dan survei faktual lokal; RPC handoff membuat antrean review pada workflow Kecamatan yang sudah ada. Warga, program, wilayah, dan referral tidak disalin.
 - Selama tahap prototype, source-of-truth pengembangan adalah branch `integration/mbi-v1`. Branch `main` diperbarui setelah seluruh prototype selesai dan baseline final tervalidasi.
 - Data warga menggunakan tabel bersama `warga`; tabel domain OPD hanya menyimpan data proses dan layanan khusus.
 

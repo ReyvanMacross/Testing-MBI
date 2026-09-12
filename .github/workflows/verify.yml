@@ -25,6 +25,7 @@ on:
       - feat/cipta-bintar-mvp
       - feat/bapperida-mvp
       - feat/walikota-mvp
+      - feat/kelurahan-mvp
       - integration/**
 
 permissions:
@@ -71,6 +72,7 @@ jobs:
       - run: npm run test:cipta-bintar-contract
       - run: npm run test:bapperida-contract
       - run: npm run test:walikota-contract
+      - run: npm run test:kelurahan-contract
       - run: npm run scan:pii
       - run: npm run scan:secrets
       - run: npm run audit:dinsos-api-guards
@@ -85,6 +87,7 @@ jobs:
       - run: npm run audit:cipta-bintar-api-guards
       - run: npm run audit:bapperida-api-guards
       - run: npm run audit:walikota-api-guards
+      - run: npm run audit:kelurahan-api-guards
 
   hosted-staging-verification:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_hosted_staging }}
@@ -135,6 +138,8 @@ jobs:
       E2E_CIPTA_BINTAR_PASSWORD: ${{ secrets.E2E_CIPTA_BINTAR_PASSWORD }}
       E2E_BAPPERIDA_IDENTIFIER: ${{ secrets.E2E_BAPPERIDA_IDENTIFIER }}
       E2E_BAPPERIDA_PASSWORD: ${{ secrets.E2E_BAPPERIDA_PASSWORD }}
+      E2E_KELURAHAN_IDENTIFIER: ${{ secrets.E2E_KELURAHAN_IDENTIFIER }}
+      E2E_KELURAHAN_PASSWORD: ${{ secrets.E2E_KELURAHAN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:

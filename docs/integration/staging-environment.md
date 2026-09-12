@@ -29,6 +29,8 @@ Untuk baseline prototype 13 modul, akun Kecamatan, DP3A, Disdagin, DKPP, Disbudp
 
 Jika password khusus modul diisi, nilainya mengambil prioritas. Variabel `E2E_*_PASSWORD` juga boleh dikosongkan karena pengujian akan memakai password admin modul, lalu fallback prototype bersama.
 
+Kandidat Kelurahan memakai username `admin.kelurahan`. Password mengambil prioritas dari `KELURAHAN_ADMIN_PASSWORD`, lalu `SUPABASE_TEST_VILLAGE_PASSWORD`, lalu `SUPABASE_TEST_ADMIN_PASSWORD`. Nilai password tetap hanya berada di environment lokal atau secret CI.
+
 ## Menyelaraskan akun hosted staging
 
 Setelah migration tersedia dan `SUPABASE_SECRET_KEY` terisi, jalankan onboarding idempoten:
@@ -37,7 +39,7 @@ Setelah migration tersedia dan `SUPABASE_SECRET_KEY` terisi, jalankan onboarding
 npm.cmd run onboard:integration-actors
 ```
 
-Perintah tersebut memeriksa target Supabase terlebih dahulu, kemudian membuat atau memperbarui seluruh profil integrasi termasuk Bapperida dan Wali Kota, menyambungkan `auth_user_id`, lalu memverifikasi login. `DISDAGIN_ADMIN_PROFILE_ID`, `DKPP_ADMIN_PROFILE_ID`, `DISBUDPAR_ADMIN_PROFILE_ID`, `CIPTA_BINTAR_ADMIN_PROFILE_ID`, `BAPPERIDA_ADMIN_PROFILE_ID`, dan `WALIKOTA_ADMIN_PROFILE_ID` bersifat opsional; ID baru dibuat saat profil belum ada. Semua akun dan modul memakai `NEXT_PUBLIC_SUPABASE_URL`, publishable key, secret key, serta database URL yang sama.
+Perintah tersebut memeriksa target Supabase terlebih dahulu, kemudian membuat atau memperbarui seluruh profil integrasi termasuk Bapperida, Wali Kota, dan Kelurahan Sekeloa, menyambungkan `auth_user_id`, lalu memverifikasi login. `DISDAGIN_ADMIN_PROFILE_ID`, `DKPP_ADMIN_PROFILE_ID`, `DISBUDPAR_ADMIN_PROFILE_ID`, `CIPTA_BINTAR_ADMIN_PROFILE_ID`, `BAPPERIDA_ADMIN_PROFILE_ID`, dan `WALIKOTA_ADMIN_PROFILE_ID` bersifat opsional; ID baru dibuat saat profil belum ada. Semua akun dan modul memakai `NEXT_PUBLIC_SUPABASE_URL`, publishable key, secret key, serta database URL yang sama.
 
 Validasi lintas instansi dapat dijalankan setelah build dan server tersedia:
 
