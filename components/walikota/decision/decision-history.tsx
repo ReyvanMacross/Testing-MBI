@@ -3,7 +3,7 @@ import { ArrowRight, Building2 } from "lucide-react";
 import type { WalikotaDecision } from "@/lib/walikota/data";
 import styles from "../walikota.module.css";
 
-const actionLabels = { APPROVE: "Disetujui", REQUEST_REVISION: "Revisi Diminta" } as const;
+const actionLabels = { APPROVE: "Disetujui", REQUEST_REVISION: "Ditolak" } as const;
 
 export function DecisionHistory({ decisions }: { decisions: WalikotaDecision[] }) {
   if (!decisions.length) return <div className={styles.tableCard}><p className={styles.emptyState}>Belum ada keputusan eksekutif yang diterbitkan.</p></div>;

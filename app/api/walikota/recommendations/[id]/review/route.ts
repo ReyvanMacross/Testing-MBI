@@ -34,7 +34,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       userId: actor.profileId,
       namaPengguna: actor.namaLengkap,
       rolePengguna: actor.role,
-      aktivitas: input.action === "APPROVE" ? "Menyetujui rekomendasi Bapperida" : "Meminta revisi rekomendasi Bapperida",
+      aktivitas: input.action === "APPROVE" ? "Menyetujui rekomendasi Bapperida" : "Menolak rekomendasi Bapperida",
       modul: "WALIKOTA",
       metadata: { recommendationId: id, priorityLevel: input.priorityLevel, dispositionCount: input.dispositions.length },
     });

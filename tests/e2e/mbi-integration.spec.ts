@@ -112,7 +112,7 @@ const accounts: Account[] = [
     password: process.env.E2E_WALIKOTA_PASSWORD || process.env.WALIKOTA_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
     home: "/walikota",
     blockedRoute: "/bapperida",
-    heading: "Dashboard Eksekutif",
+    heading: "Dashboard Outcome",
   },
 ];
 

@@ -26,9 +26,9 @@ test.describe("Wali Kota executive workspace", () => {
 
   test("dashboard, shared map, recommendation decision, disposition history, and mobile layout", async ({ page }) => {
     await login(page);
-    await expect(page.getByRole("heading", { name: "Dashboard Eksekutif" })).toBeVisible();
-    await expect(page.getByText("Warga Mandiri", { exact: true })).toBeVisible();
-    await expect(page.getByText("OPD Aktif", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dashboard Outcome" })).toBeVisible();
+    await expect(page.getByText("Total Warga Mandiri", { exact: true })).toBeVisible();
+    await expect(page.getByText("Warga Re-entry (Gagal Mandiri)", { exact: true })).toBeVisible();
     await expect(page.getByRole("region", { name: "Peta desil Kota Bandung" })).toBeVisible();
 
     await page.goto("/walikota?kecamatan=Coblong");
@@ -36,20 +36,22 @@ test.describe("Wali Kota executive workspace", () => {
     await expect(page.getByRole("heading", { name: "Coblong", exact: true })).toBeVisible();
 
     await page.goto("/walikota/rekomendasi");
-    await expect(page.getByRole("heading", { name: "Rekomendasi Strategis", exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Persetujuan Rekomendasi", exact: true })).toBeVisible();
     const fixtureCard = page.getByText("DEV-WK-REC-01").locator("xpath=ancestor::article");
     await expect(fixtureCard).toBeVisible();
-    await fixtureCard.getByRole("button", { name: "Beri Keputusan" }).click();
-    const dialog = page.getByRole("dialog", { name: /Tinjau DEV-WK-REC-01/u });
+    await fixtureCard.getByRole("button", { name: "Tolak", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Tolak Rekomendasi" });
     await expect(dialog).toBeVisible();
-    await dialog.getByLabel("Catatan Pimpinan").fill("Setujui fokus wilayah dan pantau hasil koordinasi setiap pekan.");
-    for (const checkbox of await dialog.getByRole("checkbox").all()) if (await checkbox.isChecked()) await checkbox.uncheck();
-    await dialog.getByRole("button", { name: "Setujui Rekomendasi" }).click();
-    await expect(dialog.getByText(/disetujui/u)).toBeVisible();
+    const confirmReject = dialog.getByRole("button", { name: "Konfirmasi Tolak" });
+    await expect(confirmReject).toBeDisabled();
+    await dialog.getByLabel("Alasan penolakan (wajib diisi)").fill("Lengkapi indikator pembanding wilayah sebelum rekomendasi diajukan kembali.");
+    await confirmReject.click();
+    await expect(page.getByText("Rekomendasi ditolak dan dikembalikan kepada Bapperida.")).toBeVisible();
+    await expect(page.getByText("DITOLAK", { exact: true }).first()).toBeVisible();
 
     await page.goto("/walikota/keputusan");
-    await expect(page.getByRole("heading", { name: "Keputusan & Disposisi" })).toBeVisible();
-    await expect(page.getByText("Setujui fokus wilayah dan pantau hasil koordinasi setiap pekan.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Riwayat Keputusan" })).toBeVisible();
+    await expect(page.getByText("Lengkapi indikator pembanding wilayah sebelum rekomendasi diajukan kembali.")).toBeVisible();
     expect(await page.content()).not.toMatch(/\b\d{16}\b/u);
 
     await page.setViewportSize({ width: 390, height: 844 });

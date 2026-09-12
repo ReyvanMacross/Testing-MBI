@@ -1,80 +1,152 @@
 "use client";
 
-import { CheckCircle2, Gavel, RotateCcw, X } from "lucide-react";
+import { CalendarDays, Check, CheckCircle2, ClipboardClock, Download, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import type { ExecutiveRecommendation } from "@/lib/walikota/data";
+import type { ExecutiveRecommendation, WalikotaDecision } from "@/lib/walikota/data";
 import styles from "../walikota.module.css";
 
-type OpdOption = { id: string; code: string; name: string };
-const categoryLabels: Record<string, string> = { CAPAIAN_JALUR: "Capaian Jalur", SEBARAN_WILAYAH: "Sebaran Wilayah", RE_ENTRY: "Re-entry", INTEGRASI_DATA: "Integrasi Data", ANGGARAN: "Anggaran", OUTCOME: "Outcome" };
-const statusLabels: Record<string, string> = { MENUNGGU_PERSETUJUAN: "Menunggu Keputusan", PERLU_REVISI: "Revisi Diminta", DITINDAKLANJUTI: "Disetujui", SELESAI: "Selesai" };
+const categoryLabels: Record<string, string> = {
+  CAPAIAN_JALUR: "Capaian Jalur",
+  SEBARAN_WILAYAH: "Sebaran Wilayah",
+  RE_ENTRY: "Re-entry",
+  INTEGRASI_DATA: "Integrasi Data",
+  ANGGARAN: "Anggaran",
+  OUTCOME: "Outcome",
+};
 
-export function ExecutiveRecommendations({ items, opdOptions, status }: { items: ExecutiveRecommendation[]; opdOptions: OpdOption[]; status?: string }) {
-  const [reviewing, setReviewing] = useState<ExecutiveRecommendation | null>(null);
-  const filtered = status && status !== "SEMUA" ? items.filter((item) => item.status === status) : items;
-  const counts = useMemo(() => ({
-    total: items.length,
-    pending: items.filter((item) => item.status === "MENUNGGU_PERSETUJUAN").length,
-    approved: items.filter((item) => item.status === "DITINDAKLANJUTI").length,
-    revision: items.filter((item) => item.status === "PERLU_REVISI").length,
-  }), [items]);
-  return <>
-    <section className={styles.recommendationGrid}><Summary label="Rekomendasi Strategis" value={counts.total} /><Summary label="Menunggu Keputusan" value={counts.pending} /><Summary label="Disetujui" value={counts.approved} /><Summary label="Perlu Revisi" value={counts.revision} /></section>
-    <section className={styles.recommendationList}>{filtered.length ? filtered.map((item) => <article className={styles.recommendationItem} key={item.id}>
-      <div className={styles.recommendationTop}><div className={styles.decisionMeta}><span className={styles.categoryBadge}>{categoryLabels[item.category] ?? item.category}</span><span className={styles.recipientChip}>{item.referenceCode}</span></div><span className={`${styles.statusBadge} ${styles[`status${item.status}`] ?? ""}`}>{statusLabels[item.status] ?? item.status}</span></div>
-      {item.mayorNote && <div className={styles.mayorNote}>Catatan Wali Kota: {item.mayorNote}</div>}
-      <div className={styles.recommendationBody}><div><h3>Temuan Bapperida</h3><p>{item.finding}</p></div><div><h3>Rekomendasi Strategis</h3><p><a>{item.recommendation}</a></p></div></div>
-      <div className={styles.recipientRow}><span>Perangkat daerah terkait:</span>{item.recipients.map((recipient) => <span className={styles.recipientChip} key={recipient.id}>{recipient.code}</span>)}<time>{formatDate(item.submittedAt ?? item.updatedAt)}</time>{item.status === "MENUNGGU_PERSETUJUAN" && <div className={styles.reviewActions}><button className={styles.approve} type="button" onClick={() => setReviewing(item)}><Gavel size={16} /> Beri Keputusan</button></div>}</div>
-    </article>) : <div className={styles.emptyState}>Tidak ada rekomendasi pada status ini.</div>}</section>
-    {reviewing && <ReviewDialog item={reviewing} opdOptions={opdOptions} onClose={() => setReviewing(null)} />}
-  </>;
-}
+const historyTitles: Record<string, string> = {
+  CAPAIAN_JALUR: "Capaian Jalur Intervensi",
+  SEBARAN_WILAYAH: "Kuota Intervensi Wilayah Prioritas",
+  RE_ENTRY: "Evaluasi Kriteria Re-entry",
+  INTEGRASI_DATA: "Koneksi Data Lintas OPD",
+  ANGGARAN: "Evaluasi Alokasi Anggaran",
+  OUTCOME: "Evaluasi Outcome Kota",
+};
 
-function Summary({ label, value }: { label: string; value: number }) { return <article className={styles.recommendationCard}><span>{label}</span><strong>{value}</strong></article>; }
+const opdLabels: Record<string, string> = {
+  DISKOMINFO: "Diskominfo",
+  DINSOS: "Dinas Sosial",
+  DISNAKER: "Disnaker",
+  DISKOP: "Diskop UKM",
+  DISDIK: "Disdik",
+  KECAMATAN: "Kecamatan",
+  DP3A: "DP3A",
+  DISDAGIN: "Disdagin",
+  DKPP: "DKPP",
+  DISBUDPAR: "Disbudpar",
+  CIPTA_BINTAR: "Dinas Cipta Bintar",
+  BAPPERIDA: "Bapperida",
+  WALIKOTA: "Wali Kota",
+};
 
-function ReviewDialog({ item, opdOptions, onClose }: { item: ExecutiveRecommendation; opdOptions: OpdOption[]; onClose: () => void }) {
+export function ExecutiveRecommendations({ items }: { items: ExecutiveRecommendation[] }) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
+  const pending = items.filter((item) => item.status === "MENUNGGU_PERSETUJUAN");
+  const history = useMemo(
+    () => items.map((item) => item.latestDecision).filter((decision): decision is WalikotaDecision => Boolean(decision)).sort((a, b) => b.decidedAt.localeCompare(a.decidedAt)),
+    [items],
+  );
+  const now = new Date();
+  const decidedThisMonth = history.filter((decision) => {
+    const date = new Date(decision.decidedAt);
+    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  }).length;
+  const [rejecting, setRejecting] = useState<ExecutiveRecommendation | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string[]>(item.recipients.map((recipient) => recipient.id));
 
-  async function decide(form: HTMLFormElement, action: "APPROVE" | "REQUEST_REVISION") {
-    setBusy(true); setFeedback(null);
-    const fields = new FormData(form);
-    const instruction = String(fields.get("instruction") ?? "").trim();
-    if (action === "APPROVE" && selected.length && instruction.length < 10) { setFeedback("Instruksi disposisi minimal 10 karakter."); setBusy(false); return; }
-    const payload = {
-      expectedVersion: item.version,
-      action,
-      priorityLevel: fields.get("priorityLevel"),
-      leaderNote: fields.get("leaderNote"),
-      dispositions: action === "APPROVE" ? selected.map((opdId) => ({ opdId, instruction, dueDate: fields.get("dueDate") || null })) : [],
-    };
+  async function submitDecision(item: ExecutiveRecommendation, action: "APPROVE" | "REQUEST_REVISION", note: string) {
+    setBusyId(item.id);
+    setFeedback(null);
     try {
-      const response = await fetch(`/api/walikota/recommendations/${item.id}/review`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      const response = await fetch(`/api/walikota/recommendations/${item.id}/review`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ expectedVersion: item.version, action, priorityLevel: "NORMAL", leaderNote: note, dispositions: [] }),
+      });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Keputusan tidak dapat disimpan.");
-      setFeedback(action === "APPROVE" ? "Rekomendasi disetujui dan disposisi diterbitkan." : "Permintaan revisi dikirim ke Bapperida.");
-      router.refresh(); setTimeout(onClose, 700);
-    } catch (error) { setFeedback(error instanceof Error ? error.message : "Keputusan tidak dapat disimpan."); }
-    finally { setBusy(false); }
+      setFeedback(action === "APPROVE" ? "Rekomendasi disetujui." : "Rekomendasi ditolak dan dikembalikan kepada Bapperida.");
+      setRejecting(null);
+      router.refresh();
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Keputusan tidak dapat disimpan.");
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  return <div className={styles.modalBackdrop} role="presentation" onMouseDown={onClose}><section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="executive-review-title" onMouseDown={(event) => event.stopPropagation()}>
-    <header><div><span className={styles.eyebrow}>KEPUTUSAN EKSEKUTIF</span><h2 id="executive-review-title">Tinjau {item.referenceCode}</h2></div><button type="button" aria-label="Tutup" onClick={onClose}><X /></button></header>
-    <form className={`${styles.modalBody} ${styles.reviewForm}`} onSubmit={(event) => { event.preventDefault(); void decide(event.currentTarget, "APPROVE"); }}>
-      <div className={styles.field}><span>Rekomendasi Bapperida</span><strong>{item.recommendation}</strong></div>
-      <label className={styles.field}><span>Tingkat Prioritas</span><select name="priorityLevel" defaultValue="TINGGI"><option value="NORMAL">Normal</option><option value="TINGGI">Tinggi</option><option value="MENDESAK">Mendesak</option></select></label>
-      <label className={styles.field}><span>Catatan Pimpinan</span><textarea name="leaderNote" required minLength={10} maxLength={2000} placeholder="Tuliskan pertimbangan keputusan atau arahan revisi..." /></label>
-      <div className={styles.field}><span>Disposisi ke Perangkat Daerah (opsional)</span><div className={styles.checkboxGrid}>{opdOptions.map((opd) => <label key={opd.id}><input type="checkbox" checked={selected.includes(opd.id)} onChange={(event) => setSelected((current) => event.target.checked ? [...current, opd.id] : current.filter((id) => id !== opd.id))} />{opd.code}</label>)}</div></div>
-      <label className={styles.field}><span>Instruksi Disposisi</span><textarea name="instruction" placeholder="Arahan tindak lanjut bagi perangkat daerah terpilih..." /></label>
-      <label className={styles.field}><span>Tenggat Disposisi</span><input name="dueDate" type="date" /></label>
-      {feedback && <p className={`${styles.feedback} ${feedback.includes("tidak") || feedback.includes("minimal") ? styles.error : ""}`}>{feedback}</p>}
-      <div className={styles.composerActions}><button type="button" onClick={onClose}>Batal</button><button type="button" disabled={busy} onClick={(event) => { if (event.currentTarget.form) void decide(event.currentTarget.form, "REQUEST_REVISION"); }}><RotateCcw size={16} /> Minta Revisi</button><button className={styles.submit} type="submit" disabled={busy}><CheckCircle2 size={16} /> {busy ? "Menyimpan..." : "Setujui Rekomendasi"}</button></div>
-    </form>
-  </section></div>;
+  return (
+    <>
+      <header className={styles.pageHeader}>
+        <div><h1>Persetujuan Rekomendasi</h1><p>Rekomendasi kebijakan yang menunggu keputusan Anda</p></div>
+        <button className={styles.downloadButton} type="button" onClick={() => window.print()}><Download size={17} /> Unduh Laporan</button>
+      </header>
+
+      <section className={styles.approvalSummary} aria-label="Ringkasan persetujuan rekomendasi">
+        <SummaryCard label="Menunggu Keputusan" value={pending.length} icon={<ClipboardClock />} tone="waiting" />
+        <SummaryCard label="Sudah Diputuskan Bulan Ini" value={decidedThisMonth} icon={<CheckCircle2 />} tone="decided" />
+      </section>
+
+      {feedback && <p className={styles.decisionFeedback} role="status">{feedback}</p>}
+
+      <section className={styles.pendingList} aria-label="Rekomendasi menunggu keputusan">
+        {pending.length ? pending.map((item) => (
+          <article className={styles.approvalCard} key={item.id}>
+            <div className={styles.approvalTop}><span className={styles.pendingBadge}>MENUNGGU PERSETUJUAN</span><span>ID: {item.referenceCode}</span></div>
+            <div className={styles.approvalDetails}>
+              <div className={styles.proposalMeta}><dl><div><dt>Pengusul</dt><dd>Bapperida Kota Bandung</dd></div><div><dt>Kategori</dt><dd>{categoryLabels[item.category] ?? item.category}</dd></div></dl></div>
+              <div className={styles.proposalMeta}><dl><div><dt>Tanggal Masuk</dt><dd><CalendarDays size={17} /> {formatDate(item.submittedAt ?? item.updatedAt)}</dd></div><div><dt>Ditujukan ke</dt><dd className={styles.recipientChips}>{item.recipients.map((recipient) => <span key={recipient.id}>{opdLabels[recipient.code] ?? recipient.name ?? recipient.code}</span>)}</dd></div></dl></div>
+              <div className={styles.fullField}><span>Temuan Utama</span><strong>{item.finding}</strong></div>
+              <div className={`${styles.fullField} ${styles.recommendationField}`}><span>Rekomendasi Kebijakan</span><p>{item.recommendation}</p></div>
+            </div>
+            <div className={styles.approvalActions}>
+              <button className={styles.approveButton} type="button" disabled={busyId === item.id} onClick={() => void submitDecision(item, "APPROVE", "Rekomendasi disetujui oleh Wali Kota.")}><Check size={22} /> {busyId === item.id ? "Menyimpan..." : "Setujui"}</button>
+              <button className={styles.rejectButton} type="button" disabled={busyId === item.id} onClick={() => { setFeedback(null); setRejecting(item); }}><X size={22} /> Tolak</button>
+            </div>
+          </article>
+        )) : <div className={styles.emptyState}>Tidak ada rekomendasi yang menunggu keputusan.</div>}
+      </section>
+
+      <section className={styles.historySection} id="riwayat-keputusan">
+        <h2>Riwayat Keputusan</h2>
+        <div className={styles.historyList}>
+          {history.length ? history.map((decision) => {
+            const approved = decision.action === "APPROVE";
+            return <article className={styles.historyRow} key={decision.id}><span className={approved ? styles.historyApprovedIcon : styles.historyRejectedIcon}>{approved ? <Check size={20} /> : <X size={20} />}</span><strong>{historyTitles[decision.category] ?? decision.recommendation}</strong><span className={approved ? styles.historyApproved : styles.historyRejected}>{approved ? "DISETUJUI" : "DITOLAK"}</span><time>{formatDate(decision.decidedAt)}</time></article>;
+          }) : <div className={styles.emptyState}>Belum ada keputusan Wali Kota.</div>}
+        </div>
+      </section>
+
+      {rejecting && <RejectDialog item={rejecting} busy={busyId === rejecting.id} onClose={() => setRejecting(null)} onConfirm={(reason) => submitDecision(rejecting, "REQUEST_REVISION", reason)} />}
+    </>
+  );
 }
 
-function formatDate(value: string) { return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value)); }
+function SummaryCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: "waiting" | "decided" }) {
+  return <article className={styles.summaryApprovalCard}><div><span>{label}</span><strong>{value}</strong></div><div className={tone === "waiting" ? styles.waitingIcon : styles.decidedIcon}>{icon}</div></article>;
+}
+
+function RejectDialog({ item, busy, onClose, onConfirm }: { item: ExecutiveRecommendation; busy: boolean; onClose: () => void; onConfirm: (reason: string) => Promise<void> }) {
+  const [reason, setReason] = useState("");
+  return (
+    <div className={styles.modalBackdrop} role="presentation" onMouseDown={onClose}>
+      <section className={styles.rejectModal} role="dialog" aria-modal="true" aria-labelledby="reject-title" onMouseDown={(event) => event.stopPropagation()}>
+        <header><h2 id="reject-title">Tolak Rekomendasi</h2><button type="button" aria-label="Tutup" onClick={onClose}><X /></button></header>
+        <form onSubmit={(event) => { event.preventDefault(); void onConfirm(reason); }}>
+          <div className={styles.rejectBody}>
+            <p>Anda akan menolak pengajuan <strong>{categoryLabels[item.category] ?? item.category}</strong>. Harap berikan alasan penolakan untuk catatan sistem.</p>
+            <label><span>Alasan penolakan (wajib diisi)</span><textarea autoFocus required minLength={10} maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Masukkan alasan penolakan..." /></label>
+          </div>
+          <footer><button type="button" onClick={onClose}>Batal</button><button className={styles.confirmReject} type="submit" disabled={busy || reason.trim().length < 10}>{busy ? "Menyimpan..." : "Konfirmasi Tolak"}</button></footer>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" }).format(new Date(value));
+}
