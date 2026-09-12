@@ -13,7 +13,7 @@ assert.ok(migrations.length > 0, "Migration directory is empty.");
 assert.equal(migrations[0], "202609040000_initial_schema.sql");
 assert.equal(
   migrations.at(-1),
-  "202609160006_disdik_bandung_business_date.sql",
+  "202609170002_bapperida_coordination_rpcs.sql",
 );
 assert.equal(new Set(migrations).size, migrations.length, "Duplicate filename found.");
 

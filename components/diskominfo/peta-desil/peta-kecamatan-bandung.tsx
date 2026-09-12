@@ -18,10 +18,12 @@ import styles from "./peta-kecamatan-bandung.module.css";
 
 type PropertiPetaKecamatanBandung = {
   daftarKecamatan: DataKecamatanPeta[];
+  basePath?: string;
 };
 
 export function PetaKecamatanBandung({
   daftarKecamatan,
+  basePath = "/diskominfo/peta",
 }: PropertiPetaKecamatanBandung) {
   const router = useRouter();
   const [kecamatanAktif, setKecamatanAktif] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export function PetaKecamatanBandung({
     : undefined;
 
   function bukaKecamatan(nama: string) {
-    router.push(`/diskominfo/peta?kecamatan=${encodeURIComponent(nama)}`);
+    router.push(`${basePath}?kecamatan=${encodeURIComponent(nama)}`);
   }
 
   return (

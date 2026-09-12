@@ -32,6 +32,7 @@ type PropertiPetaKelurahanBandung = {
   kecamatan: string;
   daftarKelurahan: DataKelurahanPeta[];
   kodeKelurahanTerpilih?: string;
+  basePath?: string;
 };
 
 const batasWilayahKota = dataBatasWilayah as unknown as FeatureCollection<
@@ -43,6 +44,7 @@ export function PetaKelurahanBandung({
   kecamatan,
   daftarKelurahan,
   kodeKelurahanTerpilih,
+  basePath = "/diskominfo/peta",
 }: PropertiPetaKelurahanBandung) {
   const router = useRouter();
   const [kodeAktif, setKodeAktif] = useState<string | null>(
@@ -79,7 +81,7 @@ export function PetaKelurahanBandung({
 
   function pilihKelurahan(kode: string) {
     router.push(
-      `/diskominfo/peta?kecamatan=${encodeURIComponent(
+      `${basePath}?kecamatan=${encodeURIComponent(
         kecamatan,
       )}&kelurahan=${encodeURIComponent(kode)}`,
     );

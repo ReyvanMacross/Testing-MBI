@@ -14,6 +14,7 @@ type PropertiPanelDataKelurahan = {
   wargaBelumTerpetakan: number;
   daftarSumber: DesilSourceInfo[];
   kodeKelurahanTerpilih?: string;
+  basePath?: string;
 };
 
 export function PanelDataKelurahan({
@@ -22,6 +23,7 @@ export function PanelDataKelurahan({
   wargaBelumTerpetakan,
   daftarSumber,
   kodeKelurahanTerpilih,
+  basePath = "/diskominfo/peta",
 }: PropertiPanelDataKelurahan) {
   const selectedSubdistrict = kodeKelurahanTerpilih
     ? daftarKelurahan.find((item) => item.kode === kodeKelurahanTerpilih)
@@ -98,7 +100,7 @@ export function PanelDataKelurahan({
                 <div className={styles.itemIdentity}>
                   <h3>
                     <Link
-                      href={`/diskominfo/peta?kecamatan=${encodeURIComponent(
+                      href={`${basePath}?kecamatan=${encodeURIComponent(
                         kecamatan,
                       )}&kelurahan=${encodeURIComponent(item.kode)}`}
                     >

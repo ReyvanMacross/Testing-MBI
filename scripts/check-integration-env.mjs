@@ -107,6 +107,7 @@ const accounts = [
   { label: "DKPP", defaultIdentifier: "admin.dkpp", identifiers: ["E2E_DKPP_IDENTIFIER", "DKPP_ADMIN_USERNAME"], passwords: ["E2E_DKPP_PASSWORD", "DKPP_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
   { label: "Disbudpar", defaultIdentifier: "admin.disbudpar", identifiers: ["E2E_DISBUDPAR_IDENTIFIER", "DISBUDPAR_ADMIN_USERNAME"], passwords: ["E2E_DISBUDPAR_PASSWORD", "DISBUDPAR_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
   { label: "Cipta Bintar", defaultIdentifier: "admin.cipta-bintar", identifiers: ["E2E_CIPTA_BINTAR_IDENTIFIER", "CIPTA_BINTAR_ADMIN_USERNAME"], passwords: ["E2E_CIPTA_BINTAR_PASSWORD", "CIPTA_BINTAR_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
+  { label: "Bapperida", defaultIdentifier: "admin.bapperida", identifiers: ["E2E_BAPPERIDA_IDENTIFIER", "BAPPERIDA_ADMIN_USERNAME"], passwords: ["E2E_BAPPERIDA_PASSWORD", "BAPPERIDA_ADMIN_PASSWORD", "SUPABASE_TEST_ADMIN_PASSWORD"] },
 ];
 
 for (const account of accounts) {
@@ -114,7 +115,7 @@ for (const account of accounts) {
   requirePassword(`${account.label} password`, 12, ...account.passwords);
 }
 
-for (const variable of ["DISDAGIN_ADMIN_PROFILE_ID", "DKPP_ADMIN_PROFILE_ID", "DISBUDPAR_ADMIN_PROFILE_ID", "CIPTA_BINTAR_ADMIN_PROFILE_ID"]) {
+for (const variable of ["DISDAGIN_ADMIN_PROFILE_ID", "DKPP_ADMIN_PROFILE_ID", "DISBUDPAR_ADMIN_PROFILE_ID", "CIPTA_BINTAR_ADMIN_PROFILE_ID", "BAPPERIDA_ADMIN_PROFILE_ID"]) {
   const profileId = process.env[variable]?.trim();
   if (profileId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(profileId)) {
     invalid.push(`${variable} harus berupa UUID jika diisi`);

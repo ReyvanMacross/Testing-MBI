@@ -33,5 +33,8 @@ export function resolveHomeRoute(profile: HomeRouteProfile) {
   if (profile.role === "INTERVENSI" && profile.opdCode === "CIPTA_BINTAR") {
     return "/cipta-bintar";
   }
+  if (profile.role === "INTERVENSI" && profile.opdCode === "BAPPERIDA") {
+    return "/bapperida";
+  }
   return null;
 }

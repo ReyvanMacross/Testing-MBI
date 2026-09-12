@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { PanelDataKelurahan } from "@/components/diskominfo/peta-desil/panel-data-kelurahan";
 import { PanelDistribusiKota } from "@/components/diskominfo/peta-desil/panel-distribusi-kota";
@@ -16,11 +17,15 @@ import styles from "@/app/diskominfo/peta/peta.module.css";
 type PropertiPenjelajahPetaDesil = {
   kecamatanDiminta?: string;
   kelurahanDiminta?: string;
+  basePath?: string;
+  citySidePanel?: ReactNode;
 };
 
 export async function PenjelajahPetaDesil({
   kecamatanDiminta,
   kelurahanDiminta,
+  basePath = "/diskominfo/peta",
+  citySidePanel,
 }: PropertiPenjelajahPetaDesil) {
   if (!kecamatanDiminta) {
     const [cityDistribution, districtDistribution] = await Promise.all([
@@ -32,23 +37,25 @@ export async function PenjelajahPetaDesil({
       <section className={styles.mapCard} aria-label="Peta desil Kota Bandung">
         <div className={styles.mapContent}>
           <div className={styles.mapViewport}>
-            <PetaKecamatanBandung daftarKecamatan={districtDistribution} />
+            <PetaKecamatanBandung daftarKecamatan={districtDistribution} basePath={basePath} />
           </div>
 
           <div className={styles.sidePanel}>
-            <PanelDistribusiKota
-              distribusi={cityDistribution.distribution}
-              totalKecamatan={districtDistribution.length}
-              kecamatanDenganData={districtDistribution.filter(
-                (district) => district.totalWithDesil > 0,
-              ).length}
-              kecamatanInternal={districtDistribution.filter(
-                (district) => district.source?.kind === "INTERNAL_MBI",
-              ).length}
-              kecamatanReferensiPublik={districtDistribution.filter(
-                (district) => district.source?.kind === "PUBLIC_REFERENCE",
-              ).length}
-            />
+            {citySidePanel ?? (
+              <PanelDistribusiKota
+                distribusi={cityDistribution.distribution}
+                totalKecamatan={districtDistribution.length}
+                kecamatanDenganData={districtDistribution.filter(
+                  (district) => district.totalWithDesil > 0,
+                ).length}
+                kecamatanInternal={districtDistribution.filter(
+                  (district) => district.source?.kind === "INTERNAL_MBI",
+                ).length}
+                kecamatanReferensiPublik={districtDistribution.filter(
+                  (district) => district.source?.kind === "PUBLIC_REFERENCE",
+                ).length}
+              />
+            )}
           </div>
         </div>
       </section>
@@ -58,7 +65,7 @@ export async function PenjelajahPetaDesil({
   const drilldown = await getDistrictDrilldown(kecamatanDiminta);
 
   if (!drilldown) {
-    redirect("/diskominfo/peta");
+    redirect(basePath);
   }
 
   const selectedSubdistrict = kelurahanDiminta
@@ -67,7 +74,7 @@ export async function PenjelajahPetaDesil({
 
   if (kelurahanDiminta && !selectedSubdistrict) {
     redirect(
-      `/diskominfo/peta?kecamatan=${encodeURIComponent(
+      `${basePath}?kecamatan=${encodeURIComponent(
         drilldown.kecamatan.nama,
       )}`,
     );
@@ -77,7 +84,7 @@ export async function PenjelajahPetaDesil({
     <section className={styles.drilldownCard}>
       <div className={styles.drilldownHeader}>
         <nav className={styles.breadcrumb} aria-label="Lokasi peta">
-          <Link href="/diskominfo/peta">← Kota Bandung</Link>
+          <Link href={basePath}>← Kota Bandung</Link>
           <span aria-hidden="true">›</span>
           <strong>Kec. {drilldown.kecamatan.nama}</strong>
           {selectedSubdistrict && (
@@ -89,7 +96,7 @@ export async function PenjelajahPetaDesil({
         </nav>
 
         <Link
-          href="/diskominfo/peta"
+          href={basePath}
           className={styles.closeButton}
           aria-label="Tutup rincian kecamatan dan kembali ke Kota Bandung"
         >
@@ -124,6 +131,7 @@ export async function PenjelajahPetaDesil({
             kecamatan={drilldown.kecamatan.nama}
             daftarKelurahan={drilldown.kelurahan}
             kodeKelurahanTerpilih={selectedSubdistrict?.kode}
+            basePath={basePath}
           />
         </div>
 
@@ -134,6 +142,7 @@ export async function PenjelajahPetaDesil({
             wargaBelumTerpetakan={drilldown.dataQuality.unresolvedWarga}
             daftarSumber={drilldown.sources}
             kodeKelurahanTerpilih={selectedSubdistrict?.kode}
+            basePath={basePath}
           />
         </div>
       </div>

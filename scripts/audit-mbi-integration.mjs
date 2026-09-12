@@ -65,6 +65,7 @@ for (const table of [
   "dkpp_interventions",
   "disbudpar_interventions",
   "cipta_bintar_interventions",
+  "bapperida_recommendations",
 ]) {
   const directRls = new RegExp(
     `alter\\s+table\\s+public\\.${table}\\s+enable\\s+row\\s+level\\s+security`,
@@ -88,6 +89,7 @@ const requiredFiles = [
   "supabase/audits/dkpp-final-schema-check.sql",
   "supabase/audits/disbudpar-final-schema-check.sql",
   "supabase/audits/cipta-bintar-final-schema-check.sql",
+  "supabase/audits/bapperida-final-schema-check.sql",
   "scripts/audit-dinsos-api-guards.mjs",
   "scripts/audit-disnaker-api-guards.mjs",
   "scripts/audit-diskop-api-guards.mjs",
@@ -98,14 +100,17 @@ const requiredFiles = [
   "scripts/audit-dkpp-api-guards.mjs",
   "scripts/audit-disbudpar-api-guards.mjs",
   "scripts/audit-cipta-bintar-api-guards.mjs",
+  "scripts/audit-bapperida-api-guards.mjs",
   "scripts/dev/seed-disdagin-demo.mjs",
   "scripts/dev/seed-dkpp-demo.mjs",
   "scripts/dev/seed-disbudpar-demo.mjs",
   "scripts/dev/seed-cipta-bintar-demo.mjs",
+  "scripts/dev/seed-bapperida-demo.mjs",
   "tests/e2e/disdagin.spec.ts",
   "tests/e2e/dkpp.spec.ts",
   "tests/e2e/disbudpar.spec.ts",
   "tests/e2e/cipta-bintar.spec.ts",
+  "tests/e2e/bapperida.spec.ts",
   "tests/e2e/kecamatan-dp3a.spec.ts",
   "scripts/dev/seed-staging-warga-demo.mjs",
   "scripts/audit-staging-warga-demo.mjs",
@@ -119,7 +124,7 @@ for (const file of requiredFiles) {
 }
 
 const homeRoutes = await readFile(path.join(PROJECT_ROOT, "lib", "auth", "resolve-home-route.ts"), "utf8");
-for (const [opd, route] of [["DINSOS", "/dinsos"], ["DISNAKER", "/disnaker"], ["DISKOP", "/diskop"], ["DISDIK", "/disdik"], ["DP3A", "/dp3a"], ["DISDAGIN", "/disdagin"], ["DKPP", "/dkpp"], ["DISBUDPAR", "/disbudpar"], ["CIPTA_BINTAR", "/cipta-bintar"]]) {
+for (const [opd, route] of [["DINSOS", "/dinsos"], ["DISNAKER", "/disnaker"], ["DISKOP", "/diskop"], ["DISDIK", "/disdik"], ["DP3A", "/dp3a"], ["DISDAGIN", "/disdagin"], ["DKPP", "/dkpp"], ["DISBUDPAR", "/disbudpar"], ["CIPTA_BINTAR", "/cipta-bintar"], ["BAPPERIDA", "/bapperida"]]) {
   assert.ok(homeRoutes.includes(`opdCode === "${opd}"`) && homeRoutes.includes(`return "${route}"`), `Routing ${opd} belum tergabung.`);
 }
 assert.ok(homeRoutes.includes('profile.role === "Operator Kecamatan"') && homeRoutes.includes('return "/kecamatan"'), "Routing Kecamatan belum tergabung.");
@@ -145,6 +150,9 @@ for (const script of [
   "test:cipta-bintar-contract",
   "audit:cipta-bintar-api-guards",
   "staging:seed-cipta-bintar-demo",
+  "test:bapperida-contract",
+  "audit:bapperida-api-guards",
+  "staging:seed-bapperida-demo",
   "scan:pii",
   "scan:secrets",
   "check:integration-env",
@@ -189,12 +197,17 @@ for (const variable of [
   "CIPTA_BINTAR_ADMIN_PASSWORD",
   "E2E_CIPTA_BINTAR_IDENTIFIER",
   "E2E_CIPTA_BINTAR_PASSWORD",
+  "BAPPERIDA_ADMIN_PROFILE_ID",
+  "BAPPERIDA_ADMIN_USERNAME",
+  "BAPPERIDA_ADMIN_PASSWORD",
+  "E2E_BAPPERIDA_IDENTIFIER",
+  "E2E_BAPPERIDA_PASSWORD",
 ]) {
   assert.match(environmentTemplate, new RegExp(`^${variable}=`, "mu"), `${variable} belum didokumentasikan di template env.`);
 }
 
 const productionGuard = await readFile(path.join(PROJECT_ROOT, "scripts", "check-production-env.mjs"), "utf8");
-for (const flag of ["DISNAKER_PREVIEW_MODE", "DISKOP_PREVIEW_MODE", "DISDIK_PREVIEW_MODE", "DP3A_PREVIEW_MODE", "DISDAGIN_PREVIEW_MODE", "DKPP_PREVIEW_MODE", "DISBUDPAR_PREVIEW_MODE", "CIPTA_BINTAR_PREVIEW_MODE"]) {
+for (const flag of ["DISNAKER_PREVIEW_MODE", "DISKOP_PREVIEW_MODE", "DISDIK_PREVIEW_MODE", "DP3A_PREVIEW_MODE", "DISDAGIN_PREVIEW_MODE", "DKPP_PREVIEW_MODE", "DISBUDPAR_PREVIEW_MODE", "CIPTA_BINTAR_PREVIEW_MODE", "BAPPERIDA_PREVIEW_MODE"]) {
   assert.ok(productionGuard.includes(flag), `Production guard ${flag} hilang.`);
 }
 

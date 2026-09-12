@@ -44,3 +44,9 @@ Freeze resmi sebelas modul menghasilkan 643 pemeriksaan staging tanpa blocker, P
 Status baseline saat ini:
 
 > **MBI PROTOTYPE — 11 MODULE BASELINE — HOSTED STAGING VALIDATED**
+
+## Kandidat Bapperida
+
+Branch `feat/bapperida-mvp` dibangun langsung dari freeze integrasi `2d675062f8ce910a4e1f5305203a79ae01ce8137`. Kandidat ini menambahkan dashboard outcome lintas OPD, laporan evaluasi, rekomendasi kebijakan dengan optimistic concurrency, dan drill-down peta yang memakai aset Diskominfo. Commit Bapperida belum ditambahkan ke object `baselines` sampai tip feature tervalidasi dan resmi diintegrasikan.
+
+Bapperida tidak menyalin tabel intervensi OPD. Read model `bapperida_v_cross_opd_outcomes` mengagregasi `referral_mbi`, `warga`, `master_opd`, dan desil terkini; schema `bapperida_*` dibatasi pada target indikator, snapshot evaluasi, rekomendasi, penerima rekomendasi, serta event keputusan.

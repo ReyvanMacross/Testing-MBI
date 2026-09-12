@@ -98,6 +98,14 @@ const accounts: Account[] = [
     blockedRoute: "/disbudpar",
     heading: "Rujukan Masuk & Intervensi",
   },
+  {
+    name: "Bapperida",
+    identifier: process.env.E2E_BAPPERIDA_IDENTIFIER || process.env.BAPPERIDA_ADMIN_USERNAME || "admin.bapperida",
+    password: process.env.E2E_BAPPERIDA_PASSWORD || process.env.BAPPERIDA_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
+    home: "/bapperida",
+    blockedRoute: "/cipta-bintar",
+    heading: "Dashboard Outcome",
+  },
 ];
 
 async function login(page: Page, account: Account) {

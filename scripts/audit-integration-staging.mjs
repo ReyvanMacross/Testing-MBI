@@ -16,6 +16,7 @@ const audits = [
   ["DKPP", "dkpp-final-schema-check.sql"],
   ["Disbudpar", "disbudpar-final-schema-check.sql"],
   ["Cipta Bintar", "cipta-bintar-final-schema-check.sql"],
+  ["Bapperida", "bapperida-final-schema-check.sql"],
 ];
 const blocker = /^(?:MISSING|BLOCKER|DISABLED|SECURITY_MODE_MISMATCH|SEARCH_PATH_MISSING)/u;
 
