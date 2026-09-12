@@ -1,6 +1,6 @@
 # Baseline Integrasi MBI v1
 
-Branch `integration/mbi-v1` adalah source-of-truth pengembangan selama tahap prototype. Branch ini menyatukan sebelas modul MBI pada satu schema dan satu project Supabase. Branch `main` tetap ditahan sampai seluruh prototype selesai dan integrasi final tervalidasi.
+Branch `integration/mbi-v1` adalah source-of-truth pengembangan selama tahap prototype. Branch ini menyatukan dua belas modul MBI pada satu schema dan satu project Supabase. Branch `main` tetap ditahan sampai seluruh prototype selesai dan integrasi final tervalidasi.
 
 | Modul | Branch asal | Commit baseline | Gate yang dikunci |
 | --- | --- | --- | --- |
@@ -15,6 +15,7 @@ Branch `integration/mbi-v1` adalah source-of-truth pengembangan selama tahap pro
 | DKPP | `feat/dkpp-mvp` | `8608ef1c465dbe6b0d91052a1cd5de68e362972e` | Workflow ketahanan pangan, kuota, laporan panen, API guard, dan concurrency. |
 | Disbudpar | `feat/disbudpar-mvp` | `b0e3dc39b6505b7061beaa100e06e2d6a1b1a2ca` | Workflow ekonomi kreatif, kuota, laporan pembinaan, API guard, dan concurrency. |
 | Cipta Bintar | `feat/cipta-bintar-mvp` | `f4eec71ba5c81b2928e25f0a1041dd5a24b1c5ee` | Workflow rehabilitasi infrastruktur, kuota, realisasi anggaran, laporan fisik, API guard, dan concurrency. |
+| Bapperida | `feat/bapperida-mvp` | `def01f34015934fedc61eac8a4a2d6ffc0592b82` | Dashboard outcome lintas OPD, snapshot evaluasi, rekomendasi kebijakan, shared map, API guard, dan optimistic concurrency. |
 
 ## Riwayat migration Disdik
 
@@ -28,25 +29,25 @@ Fix custom test port dari DP3A `1e13b987699d43a039015286a077301c58daf43e` dipind
 
 Validasi source menjalankan:
 
-- ancestor sebelas baseline, shared schema, urutan migration, RLS, routing auth, production preview guard, dan API guard seluruh OPD;
+- ancestor dua belas baseline, shared schema, urutan migration, RLS, routing auth, production preview guard, dan API guard seluruh OPD;
 - kontrak source setiap modul, pemindaian PII dan secret, lint, TypeScript, build, serta audit dependency;
 - pemeriksaan bahwa seluruh akun integrasi mengarah ke satu project Supabase.
 
 Validasi hosted menjalankan:
 
 - workflow real database dan concurrency seluruh modul;
-- login, home routing, isolasi route, masking NIK, dan E2E integrasi sebelas akun;
-- E2E Kecamatan, DP3A, aliran Kecamatan-DP3A, Disdagin, DKPP, Disbudpar, dan Cipta Bintar;
+- login, home routing, isolasi route, masking NIK, dan E2E integrasi dua belas akun;
+- E2E peta Diskominfo, Kecamatan, DP3A, aliran Kecamatan-DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, dan Bapperida;
 - audit schema/RLS/RPC lintas OPD dan cleanup fixture dengan data demo persisten tetap tersedia.
 
-Freeze resmi sebelas modul menghasilkan 643 pemeriksaan staging tanpa blocker, PII 0, secret 0, isolasi 11 akun, dan fixture pengujian tersisa 0. Data demo persisten tetap berjumlah 24 warga.
+Freeze resmi dua belas modul menghasilkan 671 pemeriksaan staging tanpa blocker, PII 0, secret 0, isolasi 12 akun, dan fixture pengujian tersisa 0. Data demo persisten tetap berjumlah 24 warga, ditambah snapshot outcome dan rekomendasi Bapperida.
 
 Status baseline saat ini:
 
-> **MBI PROTOTYPE — 11 MODULE BASELINE — HOSTED STAGING VALIDATED**
+> **MBI PROTOTYPE — 12 MODULE BASELINE — HOSTED STAGING VALIDATED**
 
-## Kandidat Bapperida
+## Arsitektur Bapperida
 
-Branch `feat/bapperida-mvp` dibangun langsung dari freeze integrasi `2d675062f8ce910a4e1f5305203a79ae01ce8137`. Kandidat ini menambahkan dashboard outcome lintas OPD, laporan evaluasi, rekomendasi kebijakan dengan optimistic concurrency, dan drill-down peta yang memakai aset Diskominfo. Commit Bapperida belum ditambahkan ke object `baselines` sampai tip feature tervalidasi dan resmi diintegrasikan.
+Branch `feat/bapperida-mvp` dibangun langsung dari freeze integrasi `2d675062f8ce910a4e1f5305203a79ae01ce8137`. Baseline `def01f34015934fedc61eac8a4a2d6ffc0592b82` menambahkan dashboard outcome lintas OPD, laporan evaluasi, rekomendasi kebijakan dengan optimistic concurrency, dan drill-down peta yang memakai aset Diskominfo.
 
 Bapperida tidak menyalin tabel intervensi OPD. Read model `bapperida_v_cross_opd_outcomes` mengagregasi `referral_mbi`, `warga`, `master_opd`, dan desil terkini; schema `bapperida_*` dibatasi pada target indikator, snapshot evaluasi, rekomendasi, penerima rekomendasi, serta event keputusan.

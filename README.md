@@ -39,8 +39,8 @@ Petunjuk akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, Bapperid
   - DKPP
   - Disbudpar
   - Cipta Bintar
-- Baseline resmi sebelas modul mencakup Dinas Cipta Bintar dengan kode OPD canonical `CIPTA_BINTAR`, route `/cipta-bintar`, dan schema `cipta_bintar_*`.
-- Kandidat modul ke-12 adalah Bapperida dengan kode OPD canonical `BAPPERIDA`, route `/bapperida`, dan schema `bapperida_*`. Modul ini membaca outcome dari `referral_mbi`, `warga`, master bersama, dan hasil OPD; tabel `bapperida_*` hanya menyimpan target, snapshot evaluasi, rekomendasi koordinasi, penerima, dan riwayat keputusan.
+  - Bapperida
+- Baseline resmi dua belas modul mencakup Bapperida dengan kode OPD canonical `BAPPERIDA`, route `/bapperida`, dan schema `bapperida_*`. Modul ini membaca outcome dari `referral_mbi`, `warga`, master bersama, dan hasil OPD; tabel `bapperida_*` hanya menyimpan target, snapshot evaluasi, rekomendasi koordinasi, penerima, dan riwayat keputusan.
 - Peta Bapperida memakai geometri, statistik desil, serta drill-down kecamatan/kelurahan yang sama dengan Diskominfo agar tidak ada salinan aset peta.
 - Selama tahap prototype, source-of-truth pengembangan adalah branch `integration/mbi-v1`. Branch `main` diperbarui setelah seluruh prototype selesai dan baseline final tervalidasi.
 - Data warga menggunakan tabel bersama `warga`; tabel domain OPD hanya menyimpan data proses dan layanan khusus.

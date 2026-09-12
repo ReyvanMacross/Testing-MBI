@@ -77,6 +77,7 @@
     "check:integration-env": "node scripts/check-integration-env.mjs",
     "onboard:integration-actors": "npm run check:integration-env && npm run onboard:kecamatan && npm run onboard:dp3a && npm run onboard:disdagin && npm run onboard:dkpp && npm run onboard:disbudpar && npm run onboard:cipta-bintar && npm run onboard:bapperida",
     "test:e2e:integration": "playwright test tests/e2e/mbi-integration.spec.ts",
+    "test:e2e:diskominfo": "playwright test tests/e2e/diskominfo.spec.ts",
     "test:e2e:kecamatan-dp3a": "playwright test tests/e2e/kecamatan-dp3a.spec.ts",
     "verify:integration-source": "npm run audit:integration && npm run test:disdik-contract && npm run test:kecamatan-contract && npm run test:dp3a-contract && npm run test:disdagin-contract && npm run test:dkpp-contract && npm run test:disbudpar-contract && npm run test:cipta-bintar-contract && npm run test:bapperida-contract && npm run audit:dinsos-api-guards && npm run audit:disnaker-api-guards && npm run audit:diskop-api-guards && npm run audit:disdik-api-guards && npm run audit:kecamatan-api-guards && npm run audit:dp3a-api-guards && npm run audit:disdagin-api-guards && npm run audit:dkpp-api-guards && npm run audit:disbudpar-api-guards && npm run audit:cipta-bintar-api-guards && npm run audit:bapperida-api-guards && npm run test-migration-chain && npm run scan:pii && npm run scan:secrets && npm run lint && npm run build",
     "verify:integration-hosted": "node scripts/verify-integration-hosted.mjs",

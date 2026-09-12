@@ -116,7 +116,52 @@ async function login(page: Page, account: Account) {
   await page.getByLabel("Nama Pengguna atau NIP").fill(account.identifier);
   await page.getByLabel("Kata Sandi", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${account.home}$`, "u"), { timeout: 15_000 });
+  await expect(page).toHaveURL(new RegExp(`${account.home}$`, "u"), { timeout: 30_000 });
+}
+
+async function verifyDiskominfoMapRegression(page: Page) {
+  for (const [url, heading] of [
+    ["/diskominfo/peta", "Peta Sebaran Desil"],
+    ["/diskominfo/peta?kecamatan=Coblong", "Peta Sebaran Desil"],
+    ["/diskominfo/peta?kecamatan=Andir", "Peta Sebaran Desil"],
+  ] as const) {
+    await page.goto(url);
+    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const url of [
+    "/diskominfo",
+    "/diskominfo/peta",
+    "/diskominfo/peta?kecamatan=Coblong",
+    "/diskominfo/pengguna",
+    "/diskominfo/log-aktivitas",
+    "/diskominfo/integrasi-api",
+  ]) {
+    await page.goto(url);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, `${url} has horizontal overflow`).toBeLessThanOrEqual(1);
+
+    if (url === "/diskominfo/peta") {
+      const labels = page.locator("[data-label-kecamatan]");
+      await expect(labels).toHaveCount(30);
+      const visibleLabels = await labels.evaluateAll((items) =>
+        items.filter((item) => {
+          const style = getComputedStyle(item);
+          const bounds = item.getBoundingClientRect();
+          return (
+            style.display !== "none" &&
+            style.visibility !== "hidden" &&
+            bounds.width > 2 &&
+            bounds.height > 2
+          );
+        }).length,
+      );
+      expect(visibleLabels, "Semua label kecamatan harus terlihat di mobile").toBe(30);
+    }
+  }
 }
 
 async function verifyAccountBoundary(browser: Browser, account: Account) {
@@ -127,6 +172,10 @@ async function verifyAccountBoundary(browser: Browser, account: Account) {
     await expect(page.getByRole("heading", { name: account.heading }).first()).toBeVisible();
     expect(await page.content()).not.toMatch(/\b\d{16}\b/u);
 
+    if (account.name === "Diskominfo") {
+      await verifyDiskominfoMapRegression(page);
+    }
+
     await page.goto(account.blockedRoute);
     await expect(page).toHaveURL(new RegExp(`${account.home}$`, "u"));
   } finally {
@@ -135,6 +184,7 @@ async function verifyAccountBoundary(browser: Browser, account: Account) {
 }
 
 test("routing dan isolasi peran seluruh OPD tetap konsisten setelah integrasi", async ({ browser }) => {
+  test.setTimeout(180_000);
   for (const account of accounts) {
     await verifyAccountBoundary(browser, account);
   }

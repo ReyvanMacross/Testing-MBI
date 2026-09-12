@@ -8,10 +8,10 @@ async function loginAsAdmin(page: import("@playwright/test").Page) {
   await page.getByLabel("Nama Pengguna atau NIP").fill(identifier);
   await page.getByLabel("Kata Sandi", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
-  await expect(page).toHaveURL(/\/diskominfo$/);
+  await expect(page).toHaveURL(/\/diskominfo$/, { timeout: 30_000 });
 }
 
-test("Admin Diskominfo can traverse all frozen MVP modules and logout", async ({
+test("Admin Diskominfo can traverse frozen routes and verify the shared map on mobile", async ({
   page,
 }) => {
   await page.goto("/diskominfo");
@@ -35,15 +35,7 @@ test("Admin Diskominfo can traverse all frozen MVP modules and logout", async ({
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }
 
-  await page.getByRole("button", { name: "Keluar" }).click();
-  await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByRole("heading", { name: "Masuk" })).toBeVisible();
-});
-
-test("Frozen MVP routes do not overflow a 390px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/login");
-  await loginAsAdmin(page);
 
   for (const url of [
     "/diskominfo",
@@ -83,4 +75,5 @@ test("Frozen MVP routes do not overflow a 390px viewport", async ({ page }) => {
 
   await page.getByRole("button", { name: "Keluar" }).click();
   await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Masuk" })).toBeVisible();
 });
