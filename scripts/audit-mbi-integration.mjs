@@ -18,6 +18,7 @@ const baselines = {
   disbudpar: "b0e3dc39b6505b7061beaa100e06e2d6a1b1a2ca",
   ciptaBintar: "f4eec71ba5c81b2928e25f0a1041dd5a24b1c5ee",
   bapperida: "def01f34015934fedc61eac8a4a2d6ffc0592b82",
+  walikota: "fdaf12e235ca5ab47b954efa9c4ee700bee1a6d5",
 };
 
 for (const [module, commit] of Object.entries(baselines)) {

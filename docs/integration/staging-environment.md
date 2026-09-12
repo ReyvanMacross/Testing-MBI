@@ -16,7 +16,7 @@ Jalankan pemeriksaan berikut. Pemeriksaan hanya menampilkan **nama** variabel ya
 npm.cmd run check:integration-env
 ```
 
-Untuk baseline prototype dan kandidat Wali Kota, akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, Bapperida, dan Wali Kota memakai `SUPABASE_TEST_ADMIN_PASSWORD` jika password modul atau password E2E tidak diisi. Username bawaannya adalah:
+Untuk baseline prototype 13 modul, akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, Bapperida, dan Wali Kota memakai `SUPABASE_TEST_ADMIN_PASSWORD` jika password modul atau password E2E tidak diisi. Username bawaannya adalah:
 
 - `admin.kecamatan`
 - `admin.dp3a`

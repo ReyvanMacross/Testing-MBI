@@ -40,10 +40,10 @@ Petunjuk akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, Bapperid
   - Disbudpar
   - Cipta Bintar
   - Bapperida
-  - Wali Kota (kandidat modul ke-13)
-- Baseline resmi dua belas modul mencakup Bapperida dengan kode OPD canonical `BAPPERIDA`, route `/bapperida`, dan schema `bapperida_*`. Modul ini membaca outcome dari `referral_mbi`, `warga`, master bersama, dan hasil OPD; tabel `bapperida_*` hanya menyimpan target, snapshot evaluasi, rekomendasi koordinasi, penerima, dan riwayat keputusan.
+  - Wali Kota
+- Baseline resmi tiga belas modul mencakup Bapperida dengan kode OPD canonical `BAPPERIDA`, route `/bapperida`, dan schema `bapperida_*`. Modul ini membaca outcome dari `referral_mbi`, `warga`, master bersama, dan hasil OPD; tabel `bapperida_*` hanya menyimpan target, snapshot evaluasi, rekomendasi koordinasi, penerima, dan riwayat keputusan.
 - Peta Bapperida memakai geometri, statistik desil, serta drill-down kecamatan/kelurahan yang sama dengan Diskominfo agar tidak ada salinan aset peta.
-- Kandidat Wali Kota memakai role canonical `WALIKOTA`, kode OPD `WALIKOTA`, dan route `/walikota`. Lapisan ini membaca outcome 12 modul serta rekomendasi Bapperida; schema `walikota_*` hanya menyimpan keputusan, disposisi, dan event audit eksekutif.
+- Wali Kota memakai role canonical `WALIKOTA`, kode OPD `WALIKOTA`, dan route `/walikota`. Lapisan ini membaca outcome lintas modul serta rekomendasi Bapperida; schema `walikota_*` hanya menyimpan keputusan, disposisi, dan event audit eksekutif.
 - Selama tahap prototype, source-of-truth pengembangan adalah branch `integration/mbi-v1`. Branch `main` diperbarui setelah seluruh prototype selesai dan baseline final tervalidasi.
 - Data warga menggunakan tabel bersama `warga`; tabel domain OPD hanya menyimpan data proses dan layanan khusus.
 
