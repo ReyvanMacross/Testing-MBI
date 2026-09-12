@@ -67,6 +67,7 @@ for (const table of [
   "disbudpar_interventions",
   "cipta_bintar_interventions",
   "bapperida_recommendations",
+  "walikota_decisions",
 ]) {
   const directRls = new RegExp(
     `alter\\s+table\\s+public\\.${table}\\s+enable\\s+row\\s+level\\s+security`,
@@ -91,6 +92,7 @@ const requiredFiles = [
   "supabase/audits/disbudpar-final-schema-check.sql",
   "supabase/audits/cipta-bintar-final-schema-check.sql",
   "supabase/audits/bapperida-final-schema-check.sql",
+  "supabase/audits/walikota-final-schema-check.sql",
   "scripts/audit-dinsos-api-guards.mjs",
   "scripts/audit-disnaker-api-guards.mjs",
   "scripts/audit-diskop-api-guards.mjs",
@@ -102,16 +104,19 @@ const requiredFiles = [
   "scripts/audit-disbudpar-api-guards.mjs",
   "scripts/audit-cipta-bintar-api-guards.mjs",
   "scripts/audit-bapperida-api-guards.mjs",
+  "scripts/audit-walikota-api-guards.mjs",
   "scripts/dev/seed-disdagin-demo.mjs",
   "scripts/dev/seed-dkpp-demo.mjs",
   "scripts/dev/seed-disbudpar-demo.mjs",
   "scripts/dev/seed-cipta-bintar-demo.mjs",
   "scripts/dev/seed-bapperida-demo.mjs",
+  "scripts/dev/seed-walikota-demo.mjs",
   "tests/e2e/disdagin.spec.ts",
   "tests/e2e/dkpp.spec.ts",
   "tests/e2e/disbudpar.spec.ts",
   "tests/e2e/cipta-bintar.spec.ts",
   "tests/e2e/bapperida.spec.ts",
+  "tests/e2e/walikota.spec.ts",
   "tests/e2e/kecamatan-dp3a.spec.ts",
   "scripts/dev/seed-staging-warga-demo.mjs",
   "scripts/audit-staging-warga-demo.mjs",
@@ -125,7 +130,7 @@ for (const file of requiredFiles) {
 }
 
 const homeRoutes = await readFile(path.join(PROJECT_ROOT, "lib", "auth", "resolve-home-route.ts"), "utf8");
-for (const [opd, route] of [["DINSOS", "/dinsos"], ["DISNAKER", "/disnaker"], ["DISKOP", "/diskop"], ["DISDIK", "/disdik"], ["DP3A", "/dp3a"], ["DISDAGIN", "/disdagin"], ["DKPP", "/dkpp"], ["DISBUDPAR", "/disbudpar"], ["CIPTA_BINTAR", "/cipta-bintar"], ["BAPPERIDA", "/bapperida"]]) {
+for (const [opd, route] of [["DINSOS", "/dinsos"], ["DISNAKER", "/disnaker"], ["DISKOP", "/diskop"], ["DISDIK", "/disdik"], ["DP3A", "/dp3a"], ["DISDAGIN", "/disdagin"], ["DKPP", "/dkpp"], ["DISBUDPAR", "/disbudpar"], ["CIPTA_BINTAR", "/cipta-bintar"], ["BAPPERIDA", "/bapperida"], ["WALIKOTA", "/walikota"]]) {
   assert.ok(homeRoutes.includes(`opdCode === "${opd}"`) && homeRoutes.includes(`return "${route}"`), `Routing ${opd} belum tergabung.`);
 }
 assert.ok(homeRoutes.includes('profile.role === "Operator Kecamatan"') && homeRoutes.includes('return "/kecamatan"'), "Routing Kecamatan belum tergabung.");
@@ -154,6 +159,9 @@ for (const script of [
   "test:bapperida-contract",
   "audit:bapperida-api-guards",
   "staging:seed-bapperida-demo",
+  "test:walikota-contract",
+  "audit:walikota-api-guards",
+  "staging:seed-walikota-demo",
   "scan:pii",
   "scan:secrets",
   "check:integration-env",
@@ -203,6 +211,11 @@ for (const variable of [
   "BAPPERIDA_ADMIN_PASSWORD",
   "E2E_BAPPERIDA_IDENTIFIER",
   "E2E_BAPPERIDA_PASSWORD",
+  "WALIKOTA_ADMIN_PROFILE_ID",
+  "WALIKOTA_ADMIN_USERNAME",
+  "WALIKOTA_ADMIN_PASSWORD",
+  "E2E_WALIKOTA_IDENTIFIER",
+  "E2E_WALIKOTA_PASSWORD",
 ]) {
   assert.match(environmentTemplate, new RegExp(`^${variable}=`, "mu"), `${variable} belum didokumentasikan di template env.`);
 }

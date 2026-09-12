@@ -16,7 +16,7 @@ Jalankan pemeriksaan berikut. Pemeriksaan hanya menampilkan **nama** variabel ya
 npm.cmd run check:integration-env
 ```
 
-Untuk baseline prototype dua belas modul, akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, dan Bapperida memakai `SUPABASE_TEST_ADMIN_PASSWORD` jika password modul atau password E2E tidak diisi. Username bawaannya adalah:
+Untuk baseline prototype dan kandidat Wali Kota, akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, Bapperida, dan Wali Kota memakai `SUPABASE_TEST_ADMIN_PASSWORD` jika password modul atau password E2E tidak diisi. Username bawaannya adalah:
 
 - `admin.kecamatan`
 - `admin.dp3a`
@@ -25,6 +25,7 @@ Untuk baseline prototype dua belas modul, akun Kecamatan, DP3A, Disdagin, DKPP, 
 - `admin.disbudpar`
 - `admin.cipta-bintar`
 - `admin.bapperida`
+- `admin.walikota`
 
 Jika password khusus modul diisi, nilainya mengambil prioritas. Variabel `E2E_*_PASSWORD` juga boleh dikosongkan karena pengujian akan memakai password admin modul, lalu fallback prototype bersama.
 
@@ -36,7 +37,7 @@ Setelah migration tersedia dan `SUPABASE_SECRET_KEY` terisi, jalankan onboarding
 npm.cmd run onboard:integration-actors
 ```
 
-Perintah tersebut memeriksa target Supabase terlebih dahulu, kemudian membuat atau memperbarui profil Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, dan Bapperida, menyambungkan `auth_user_id`, lalu memverifikasi login OPD. `DISDAGIN_ADMIN_PROFILE_ID`, `DKPP_ADMIN_PROFILE_ID`, `DISBUDPAR_ADMIN_PROFILE_ID`, `CIPTA_BINTAR_ADMIN_PROFILE_ID`, dan `BAPPERIDA_ADMIN_PROFILE_ID` bersifat opsional; ID baru dibuat saat profil belum ada. Semua akun dan modul memakai `NEXT_PUBLIC_SUPABASE_URL`, publishable key, secret key, serta database URL yang sama.
+Perintah tersebut memeriksa target Supabase terlebih dahulu, kemudian membuat atau memperbarui seluruh profil integrasi termasuk Bapperida dan Wali Kota, menyambungkan `auth_user_id`, lalu memverifikasi login. `DISDAGIN_ADMIN_PROFILE_ID`, `DKPP_ADMIN_PROFILE_ID`, `DISBUDPAR_ADMIN_PROFILE_ID`, `CIPTA_BINTAR_ADMIN_PROFILE_ID`, `BAPPERIDA_ADMIN_PROFILE_ID`, dan `WALIKOTA_ADMIN_PROFILE_ID` bersifat opsional; ID baru dibuat saat profil belum ada. Semua akun dan modul memakai `NEXT_PUBLIC_SUPABASE_URL`, publishable key, secret key, serta database URL yang sama.
 
 Validasi lintas instansi dapat dijalankan setelah build dan server tersedia:
 

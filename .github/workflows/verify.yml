@@ -24,6 +24,7 @@ on:
       - feat/disbudpar-mvp
       - feat/cipta-bintar-mvp
       - feat/bapperida-mvp
+      - feat/walikota-mvp
       - integration/**
 
 permissions:
@@ -69,6 +70,7 @@ jobs:
       - run: npm run test:disbudpar-contract
       - run: npm run test:cipta-bintar-contract
       - run: npm run test:bapperida-contract
+      - run: npm run test:walikota-contract
       - run: npm run scan:pii
       - run: npm run scan:secrets
       - run: npm run audit:dinsos-api-guards
@@ -82,6 +84,7 @@ jobs:
       - run: npm run audit:disbudpar-api-guards
       - run: npm run audit:cipta-bintar-api-guards
       - run: npm run audit:bapperida-api-guards
+      - run: npm run audit:walikota-api-guards
 
   hosted-staging-verification:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_hosted_staging }}

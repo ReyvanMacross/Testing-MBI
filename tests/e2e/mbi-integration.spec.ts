@@ -106,6 +106,14 @@ const accounts: Account[] = [
     blockedRoute: "/cipta-bintar",
     heading: "Dashboard Outcome",
   },
+  {
+    name: "Wali Kota",
+    identifier: process.env.E2E_WALIKOTA_IDENTIFIER || process.env.WALIKOTA_ADMIN_USERNAME || "admin.walikota",
+    password: process.env.E2E_WALIKOTA_PASSWORD || process.env.WALIKOTA_ADMIN_PASSWORD || process.env.SUPABASE_TEST_ADMIN_PASSWORD,
+    home: "/walikota",
+    blockedRoute: "/bapperida",
+    heading: "Dashboard Eksekutif",
+  },
 ];
 
 async function login(page: Page, account: Account) {

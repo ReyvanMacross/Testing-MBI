@@ -1,0 +1,42 @@
+import "server-only";
+
+import { ApiError } from "@/lib/http/api-error-response";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+
+export type WalikotaActor = {
+  profileId: string;
+  authUserId: string;
+  namaLengkap: string;
+  role: "WALIKOTA";
+  opdId: string;
+  opdCode: "WALIKOTA";
+};
+
+export async function requireWalikotaActor(): Promise<WalikotaActor> {
+  const client = await createClient();
+  const { data, error } = await client.auth.getClaims();
+  const authUserId = data?.claims?.sub;
+  if (error || !authUserId) throw new ApiError("Sesi tidak valid.", 401);
+
+  const admin = createAdminClient();
+  const { data: profile, error: profileError } = await admin
+    .from("user_profiles")
+    .select("id,nama_lengkap,role,status,opd_id,master_opd(kode_opd)")
+    .eq("auth_user_id", authUserId)
+    .maybeSingle();
+  const opd = Array.isArray(profile?.master_opd) ? profile.master_opd[0] : profile?.master_opd;
+  if (
+    profileError || !profile || profile.status !== "AKTIF" ||
+    profile.role !== "WALIKOTA" || !profile.opd_id || opd?.kode_opd !== "WALIKOTA"
+  ) throw new ApiError("Akses ditolak.", 403);
+
+  return {
+    profileId: profile.id,
+    authUserId,
+    namaLengkap: profile.nama_lengkap,
+    role: "WALIKOTA",
+    opdId: profile.opd_id,
+    opdCode: "WALIKOTA",
+  };
+}

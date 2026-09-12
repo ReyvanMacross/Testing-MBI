@@ -23,6 +23,7 @@ export async function onboardOpdAdmin({
   institution,
   preferredEmail,
   fallbackPassword,
+  expectedRole = "INTERVENSI",
 }) {
   const profileId = process.env[`${envPrefix}_ADMIN_PROFILE_ID`];
   const username = process.env[`${envPrefix}_ADMIN_USERNAME`] || expectedUsername;
@@ -54,7 +55,7 @@ export async function onboardOpdAdmin({
   }
   if (profile) {
     const profileOpd = Array.isArray(profile.master_opd) ? profile.master_opd[0] : profile.master_opd;
-    if (profile.role !== "INTERVENSI" || profileOpd?.kode_opd !== opdCode) {
+    if (profile.role !== expectedRole || profileOpd?.kode_opd !== opdCode) {
       throw new Error(`Profil yang ditemukan bukan Admin ${opdCode} yang sah.`);
     }
   }
@@ -87,7 +88,7 @@ export async function onboardOpdAdmin({
     email,
     nama_lengkap: fullName,
     username,
-    role: "INTERVENSI",
+    role: expectedRole,
     opd_id: opd.id,
     instansi: institution,
     auth_user_id: authUserId,

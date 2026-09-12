@@ -36,5 +36,8 @@ export function resolveHomeRoute(profile: HomeRouteProfile) {
   if (profile.role === "INTERVENSI" && profile.opdCode === "BAPPERIDA") {
     return "/bapperida";
   }
+  if (profile.role === "WALIKOTA" && profile.opdCode === "WALIKOTA") {
+    return "/walikota";
+  }
   return null;
 }

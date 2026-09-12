@@ -2,6 +2,8 @@
 
 Branch `integration/mbi-v1` adalah source-of-truth pengembangan selama tahap prototype. Branch ini menyatukan dua belas modul MBI pada satu schema dan satu project Supabase. Branch `main` tetap ditahan sampai seluruh prototype selesai dan integrasi final tervalidasi.
 
+Branch `feat/walikota-mvp` adalah kandidat modul ke-13 yang dibangun langsung dari freeze `7c80a64ecffa37a64a4c3def90f5beab858be4a0`. Baseline resmi tetap 12 modul sampai kandidat ini melalui hosted staging regression dan dikunci pada `integration/mbi-v1`.
+
 | Modul | Branch asal | Commit baseline | Gate yang dikunci |
 | --- | --- | --- | --- |
 | Diskominfo | `diskominfo` | `01977c7b32b010ce5ba19b7dca5e9a76f1758881` | Dashboard integrasi, peta desil, integration health, dan activity log. |
@@ -51,3 +53,9 @@ Status baseline saat ini:
 Branch `feat/bapperida-mvp` dibangun langsung dari freeze integrasi `2d675062f8ce910a4e1f5305203a79ae01ce8137`. Baseline `def01f34015934fedc61eac8a4a2d6ffc0592b82` menambahkan dashboard outcome lintas OPD, laporan evaluasi, rekomendasi kebijakan dengan optimistic concurrency, dan drill-down peta yang memakai aset Diskominfo.
 
 Bapperida tidak menyalin tabel intervensi OPD. Read model `bapperida_v_cross_opd_outcomes` mengagregasi `referral_mbi`, `warga`, `master_opd`, dan desil terkini; schema `bapperida_*` dibatasi pada target indikator, snapshot evaluasi, rekomendasi, penerima rekomendasi, serta event keputusan.
+
+## Kandidat Wali Kota
+
+Wali Kota adalah lapisan eksekutif read-heavy di atas outcome lintas OPD dan rekomendasi Bapperida. Dashboard membaca view agregasi bersama dan memakai peta Diskominfo. Schema baru dibatasi pada `walikota_decisions`, `walikota_dispositions`, dan `walikota_decision_events`; tidak ada salinan warga, referral, program, atau outcome operasional.
+
+Aktor memakai role `WALIKOTA` dan kode OPD `WALIKOTA`. Mutasi hanya tersedia melalui RPC transaksional untuk menyetujui rekomendasi, meminta revisi, menetapkan prioritas, menyimpan catatan pimpinan, dan menerbitkan disposisi dengan optimistic concurrency.
