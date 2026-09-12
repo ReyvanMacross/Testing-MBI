@@ -16,6 +16,7 @@ const baselines = {
   disdagin: "5cadabdde950b85343832ee6a4fd7bbd1cc755bf",
   dkpp: "8608ef1c465dbe6b0d91052a1cd5de68e362972e",
   disbudpar: "b0e3dc39b6505b7061beaa100e06e2d6a1b1a2ca",
+  ciptaBintar: "f4eec71ba5c81b2928e25f0a1041dd5a24b1c5ee",
 };
 
 for (const [module, commit] of Object.entries(baselines)) {

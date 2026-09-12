@@ -38,7 +38,8 @@ Petunjuk akun Kecamatan, DP3A, Disdagin, DKPP, Disbudpar, Cipta Bintar, dan onbo
   - Disdagin
   - DKPP
   - Disbudpar
-- Branch kandidat `feat/cipta-bintar-mvp` menambahkan modul Dinas Cipta Bintar dengan kode OPD canonical `CIPTA_BINTAR`, route `/cipta-bintar`, dan schema `cipta_bintar_*`. Kandidat ini sudah lulus validasi source dan hosted staging 11 akun; baseline resmi tetap sepuluh modul sampai branch diintegrasikan dan commit-nya dikunci.
+  - Cipta Bintar
+- Baseline resmi sebelas modul mencakup Dinas Cipta Bintar dengan kode OPD canonical `CIPTA_BINTAR`, route `/cipta-bintar`, dan schema `cipta_bintar_*`.
 - Selama tahap prototype, source-of-truth pengembangan adalah branch `integration/mbi-v1`. Branch `main` diperbarui setelah seluruh prototype selesai dan baseline final tervalidasi.
 - Data warga menggunakan tabel bersama `warga`; tabel domain OPD hanya menyimpan data proses dan layanan khusus.
 
